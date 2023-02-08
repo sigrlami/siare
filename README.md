@@ -4,7 +4,7 @@ Mainnet address: 4csBZDoBmhtMmsq4dWTGdWowT7RMZtJJrEQGF5XHUKbuG4vAdZ
 
 Task1: https://github.com/sigrlami/ccdh/blob/sb/ccdh-task-1-submission/README.md
 
-This is simple [smart-contracts](https://testnet.ccdscan.io/?dcount=2&dentity=account&daddress=3xyG4riNviVCGCsan9JWY5qsSbjju4nAgLKACcWYu9bovnL1Ak) that holds lat/lon structure for some location in a world, when deployed allowed to update latitude, longitude, or label for provided numerical values.
+This is simple [smart-contract](https://testnet.ccdscan.io/?dcount=2&dentity=account&daddress=3xyG4riNviVCGCsan9JWY5qsSbjju4nAgLKACcWYu9bovnL1Ak) that holds lat/lon structure for some location in the world. When deployed allows to update latitude, longitude, or label for provided numerical values.
 
 - `deploy`: [13d20b1ad6a3f841d9c96dff829a55f526860547418063b9ebe2270c526c81d7](https://testnet.ccdscan.io/?dcount=3&dentity=transaction&dhash=13d20b1ad6a3f841d9c96dff829a55f526860547418063b9ebe2270c526c81d7)
 - `init`:  [76823e9071782c9b16a70a22390fce180d250f24b2c3cbbdb2dd572bdff77e2b](https://testnet.ccdscan.io/?dcount=3&dentity=transaction&dhash=76823e9071782c9b16a70a22390fce180d250f24b2c3cbbdb2dd572bdff77e2b)

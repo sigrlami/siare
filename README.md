@@ -37,7 +37,6 @@ $ concordium-client --grpc-ip node.testnet.concordium.com --grpc-port 10000 modu
 ![1](https://drive.google.com/uc?export=view&id=1aHSzEX9Y9SgidUP5uTkIbW8mIC5OsLfD)
 
 Result
-
 ```
 13d20b1ad6a3f841d9c96dff829a55f526860547418063b9ebe2270c526c81d7
 ```

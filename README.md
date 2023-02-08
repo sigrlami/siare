@@ -10,7 +10,7 @@ In order to start development process we need to have correct software installed
 $ rustup self uninstall
 ```
 
-![1](https://drive.google.com/file/d/1Gr-ok9mH5bAcsCj2t7TTYDfnRG5XMO7m/view?usp=share_link)
+![1](https://drive.google.com/uc?export=view&id=1Gr-ok9mH5bAcsCj2t7TTYDfnRG5XMO7m)
 
 Now I can follow task requirements :)
 

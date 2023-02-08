@@ -54,17 +54,17 @@ Result
 76823e9071782c9b16a70a22390fce180d250f24b2c3cbbdb2dd572bdff77e2b
 ```
 
-### Update Deployed COntract
+### Update Deployed Contract
 
 
 ```
 $ concordium-client --grpc-ip node.testnet.concordium.com --grpc-port 10000 contract update 2835 --entrypoint update_lon --parameter-json param.json --sender 3xyG4riNviVCGCsan9JWY5qsSbjju4nAgLKACcWYu9bovnL1Ak --energy 10000
 ```
-where 2835 index of a contract, and `param.json` contains value `30712481`.
+where `2835` index of a contract, and `param.json` contains value `30712481`.
 
 ![3](https://drive.google.com/uc?export=view&id=1jaBNZtRa4Zk-MdrH_93anwgqVT8T6-Lp)
 
-NB: when using {"lon": 30712481} leads to an eror like
+NB: when using `{"lon": 30712481}` leads to an eror like
 
 ```
 Error: Could not decode parameters from file 'param.json' as JSON:

@@ -4,12 +4,12 @@ Mainnet address: 4csBZDoBmhtMmsq4dWTGdWowT7RMZtJJrEQGF5XHUKbuG4vAdZ
 
 Task1: https://github.com/sigrlami/ccdh/blob/sb/ccdh-task-1-submission/README.md
 
-This is simple [smart-contracts](https://testnet.ccdscan.io/?dcount=2&dentity=account&daddress=3xyG4riNviVCGCsan9JWY5qsSbjju4nAgLKACcWYu9bovnL1Ak) that holds lat/lon structure for some location in a world, when deployed allowed to update latitude,longitude, or label for numerical values.
+This is simple [smart-contracts](https://testnet.ccdscan.io/?dcount=2&dentity=account&daddress=3xyG4riNviVCGCsan9JWY5qsSbjju4nAgLKACcWYu9bovnL1Ak) that holds lat/lon structure for some location in a world, when deployed allowed to update latitude, longitude, or label for provided numerical values.
 
 - `deploy`: [13d20b1ad6a3f841d9c96dff829a55f526860547418063b9ebe2270c526c81d7](https://testnet.ccdscan.io/?dcount=3&dentity=transaction&dhash=13d20b1ad6a3f841d9c96dff829a55f526860547418063b9ebe2270c526c81d7)
 - `init`:  [76823e9071782c9b16a70a22390fce180d250f24b2c3cbbdb2dd572bdff77e2b](https://testnet.ccdscan.io/?dcount=3&dentity=transaction&dhash=76823e9071782c9b16a70a22390fce180d250f24b2c3cbbdb2dd572bdff77e2b)
 - `update`: [3a5989fa84e6f5e23e2e88c0caf290d074016cddaa23bc2fd2d4bc941de20939](https://testnet.ccdscan.io/?dcount=1&dentity=transaction&dhash=3a5989fa84e6f5e23e2e88c0caf290d074016cddaa23bc2fd2d4bc941de20939)
-- `invoke`: `n/a` (see in the end)
+- `invoke`: `n/a` (see screen in the end)
 
 ## Generating New Project & Setup
 

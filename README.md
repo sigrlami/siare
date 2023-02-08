@@ -2,7 +2,9 @@
 
 Mainnet address: 4csBZDoBmhtMmsq4dWTGdWowT7RMZtJJrEQGF5XHUKbuG4vAdZ
 
-Task1:
+Task1: https://github.com/sigrlami/ccdh/blob/sb/ccdh-task-1-submission/README.md
+
+This is simple smart-contracts that holds lat/lon structure for some location in a world, when deployed allowed to update latitude,longitude, or label for numerical values.
 
 ## Generating New Project & Setup
 
@@ -17,6 +19,8 @@ cargo concordium init
 update config for the task
 
 ## Deployment
+
+
 
 ### Deploy Smart Contract
 

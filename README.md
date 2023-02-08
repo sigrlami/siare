@@ -1,6 +1,6 @@
 # CONCORDIUM HACKATON - TASK 1 - SUBMISSION
 
-- Mainnet address: 4csBZDoBmhtMmsq4dWTGdWowT7RMZtJJrEQGF5XHUKbuG4vAdZ
+Mainnet address: 4csBZDoBmhtMmsq4dWTGdWowT7RMZtJJrEQGF5XHUKbuG4vAdZ
 
 ## Install Dev Environment
 

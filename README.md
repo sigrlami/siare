@@ -50,6 +50,11 @@ $ concordium-client --grpc-ip node.testnet.concordium.com --grpc-port 10000 cont
 
 ![2](https://drive.google.com/uc?export=view&id=1GB_ZzekB1wEjsigZ_UM11038IDjA5J2B)
 
+Result
+```
+76823e9071782c9b16a70a22390fce180d250f24b2c3cbbdb2dd572bdff77e2b
+```
+
 ### Update Deployed COntract
 
 
@@ -67,8 +72,10 @@ Error: Could not decode parameters from file 'param.json' as JSON:
        Expected value of type "<Int32>", but got: {"lon":30712481}.
 ```
 
-which is not clear on how to enumerate params
+which is not clear on how to enumerate params.
 
+
+Result
 ```
 3a5989fa84e6f5e23e2e88c0caf290d074016cddaa23bc2fd2d4bc941de20939
 ```

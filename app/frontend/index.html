@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Concordium | Trails</title>
+    <script type="text/javascript" src="index.js"></script>
+    <link rel="icon" href="https://concordium.com/wp-content/uploads/2022/06/cropped-favicon-32x32.png" sizes="32x32">
+    <link rel="stylesheet" href="src/assets/css/styles.css" >
+</head>
+<body>
+<div id="myapp"></div>
+</body>
+<script type="text/javascript">
+    // Start the Elm application.
+    var app = Elm.Main.init({
+        node: document.getElementById('myapp')
+    });
+
+    //document.getElementById("audio-player").volume = 1;
+
+    app.ports.playMusic.subscribe(function() {
+        document.getElementById("audio-player").play();
+        const durationAudio = document.getElementById("audio-player").duration
+        app.ports.receiveDuration.send(durationAudio);
+
+    });
+
+    app.ports.stopMusic.subscribe(function() {
+        document.getElementById("audio-player").pause();
+    });
+
+    app.ports.setCurrentTime.subscribe(function(time) {
+        var audio = document.getElementById('audio-player');
+        audio.currentTime = time;
+    });
+
+</script>
+</html>

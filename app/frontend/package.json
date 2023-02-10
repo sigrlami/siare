@@ -35,7 +35,6 @@
         "google-closure-compiler": "^20200920.0.0",
         "html-webpack-plugin": "^4.5.0",
         "mini-css-extract-plugin": "^0.11.2",
-        "node-sass": "^4.14.1",
         "optimize-css-assets-webpack-plugin": "^5.0.4",
         "resolve-url-loader": "^3.1.1",
         "sass-loader": "^10.0.2",
@@ -44,9 +43,12 @@
         "webpack": "^4.44.2",
         "webpack-cli": "^3.3.12",
         "webpack-dev-server": "^3.11.0",
-        "webpack-merge": "^5.1.4"
+        "webpack-merge": "^5.1.4",
+        "@concordium/web-sdk": "^3.2.0"
     },
     "dependencies": {
+        "elm-live": "^4.0.2",
+        "node-sass": "^8.0.0",
         "purecss": "^2.0.3"
     },
     "prettier": {

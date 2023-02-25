@@ -44,10 +44,12 @@
         "webpack-cli": "^3.3.12",
         "webpack-dev-server": "^3.11.0",
         "webpack-merge": "^5.1.4",
-        "@concordium/web-sdk": "^3.2.0"
+        "@concordium/web-sdk": "^3.2.0",
+        "@concordium/browser-wallet-api-helpers": "^2.2.0"
     },
     "dependencies": {
         "elm-live": "^4.0.2",
+        "elm-mapbox": "^4.1.0",
         "node-sass": "^8.0.0",
         "purecss": "^2.0.3"
     },

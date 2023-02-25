@@ -18,7 +18,9 @@
             "jxxcarlson/elm-typed-time": "1.2.0",
             "matheus23/elm-default-tailwind-modules": "2.0.1",
             "rtfeldman/elm-css": "16.1.1",
-            "rtfeldman/elm-validate": "4.0.1"
+            "rtfeldman/elm-validate": "4.0.1", 
+            "gampleman/elm-mapbox": "4.1.0",
+            "pablen/toasty": "1.2.0"
         },
         "indirect": {
             "elm/bytes": "1.0.8",

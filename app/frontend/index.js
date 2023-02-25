@@ -13166,6 +13166,7 @@ var $pablen$toasty$Toasty$update = F4(
 						$elm$core$Process$sleep(cfg.transitionOutDuration)));
 		}
 	});
+var $author$project$Main$viewRoutes = _Platform_outgoingPort('viewRoutes', $elm$json$Json$Encode$string);
 var $author$project$Main$walletConnect = _Platform_outgoingPort('walletConnect', $elm$json$Json$Encode$string);
 var $author$project$Main$update = F2(
 	function (msg, model) {
@@ -13208,6 +13209,10 @@ var $author$project$Main$update = F2(
 					model,
 					$author$project$Main$sendUpdateTransaction(
 						A3($author$project$Main$encodeCoord, model.currAddress, model.currLabel, model.currCoordinate)));
+			case 'ViewRoutes':
+				return _Utils_Tuple2(
+					model,
+					$author$project$Main$viewRoutes(model.currAddress));
 			case 'ShowWalletModal':
 				return _Utils_Tuple2(
 					_Utils_update(
@@ -31786,4 +31791,4 @@ var $author$project$Main$main = $elm$browser$Browser$element(
 		view: A2($elm$core$Basics$composeR, $author$project$Main$view, $rtfeldman$elm_css$Html$Styled$toUnstyled)
 	});
 _Platform_export({'Main':{'init':$author$project$Main$main(
-	$elm$json$Json$Decode$succeed(_Utils_Tuple0))({"versions":{"elm":"0.19.1"},"types":{"message":"Main.Msg","aliases":{"Main.Coordinate":{"args":[],"type":"{ lat : Basics.Float, lon : Basics.Float }"},"Mapbox.Element.EventData":{"args":[],"type":"{ point : ( Basics.Int, Basics.Int ), lngLat : LngLat.LngLat, renderedFeatures : List.List Json.Decode.Value }"},"LngLat.LngLat":{"args":[],"type":"{ lng : Basics.Float, lat : Basics.Float }"},"Json.Decode.Value":{"args":[],"type":"Json.Encode.Value"},"Toasty.Id":{"args":[],"type":"Basics.Int"}},"unions":{"Main.Msg":{"args":[],"tags":{"NoOp":[],"ToastyMsg":["Toasty.Msg Toasty.Defaults.Toast"],"Web3Connect":[],"Web3Disconnect":[],"ReceivedConnectFromJS":["String.String"],"SendInitTransaction":[],"SendUpdateTransaction":[],"OpenView":["Main.ContentView"],"ShowWalletModal":[],"CloseWalletModal":[],"SubmitCoordinate":[],"WriteCoordinate":["Main.Coordinate"],"ReceiveCoordinate":[],"Hover":["Mapbox.Element.EventData"],"MapClick":["Mapbox.Element.EventData"],"RedirectToExplorer":["String.String"],"SetLatitude":["String.String"],"SetLongitude":["String.String"],"SetLabel":["String.String"]}},"Main.ContentView":{"args":[],"tags":{"MainView":[],"ExploreView":[],"AddView":[]}},"Basics.Float":{"args":[],"tags":{"Float":[]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"List.List":{"args":["a"],"tags":{}},"Toasty.Msg":{"args":["a"],"tags":{"Add":["a"],"Remove":["Toasty.Id"],"TransitionOut":["Toasty.Id"]}},"String.String":{"args":[],"tags":{"String":[]}},"Toasty.Defaults.Toast":{"args":[],"tags":{"Success":["String.String","String.String"],"Warning":["String.String","String.String"],"Error":["String.String","String.String"]}},"Json.Encode.Value":{"args":[],"tags":{"Value":[]}}}}})}});}(this));
+	$elm$json$Json$Decode$succeed(_Utils_Tuple0))({"versions":{"elm":"0.19.1"},"types":{"message":"Main.Msg","aliases":{"Main.Coordinate":{"args":[],"type":"{ lat : Basics.Float, lon : Basics.Float }"},"Mapbox.Element.EventData":{"args":[],"type":"{ point : ( Basics.Int, Basics.Int ), lngLat : LngLat.LngLat, renderedFeatures : List.List Json.Decode.Value }"},"LngLat.LngLat":{"args":[],"type":"{ lng : Basics.Float, lat : Basics.Float }"},"Json.Decode.Value":{"args":[],"type":"Json.Encode.Value"},"Toasty.Id":{"args":[],"type":"Basics.Int"}},"unions":{"Main.Msg":{"args":[],"tags":{"NoOp":[],"ToastyMsg":["Toasty.Msg Toasty.Defaults.Toast"],"Web3Connect":[],"Web3Disconnect":[],"ReceivedConnectFromJS":["String.String"],"SendInitTransaction":[],"SendUpdateTransaction":[],"ViewRoutes":[],"OpenView":["Main.ContentView"],"ShowWalletModal":[],"CloseWalletModal":[],"SubmitCoordinate":[],"WriteCoordinate":["Main.Coordinate"],"ReceiveCoordinate":[],"Hover":["Mapbox.Element.EventData"],"MapClick":["Mapbox.Element.EventData"],"RedirectToExplorer":["String.String"],"SetLatitude":["String.String"],"SetLongitude":["String.String"],"SetLabel":["String.String"]}},"Main.ContentView":{"args":[],"tags":{"MainView":[],"ExploreView":[],"AddView":[]}},"Basics.Float":{"args":[],"tags":{"Float":[]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"List.List":{"args":["a"],"tags":{}},"Toasty.Msg":{"args":["a"],"tags":{"Add":["a"],"Remove":["Toasty.Id"],"TransitionOut":["Toasty.Id"]}},"String.String":{"args":[],"tags":{"String":[]}},"Toasty.Defaults.Toast":{"args":[],"tags":{"Success":["String.String","String.String"],"Warning":["String.String","String.String"],"Error":["String.String","String.String"]}},"Json.Encode.Value":{"args":[],"tags":{"Value":[]}}}}})}});}(this));

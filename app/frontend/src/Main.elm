@@ -45,7 +45,6 @@ import Util as Util
 
 --------------------------------------------------------------------------------
 -- Ports
--- Should be Value not string
 
 
 port walletConnect : String -> Cmd msg
@@ -61,6 +60,9 @@ port sendInitTransaction : Json.Encode.Value -> Cmd msg
 
 
 port sendUpdateTransaction : Json.Encode.Value -> Cmd msg
+
+
+port viewRoutes : String -> Cmd msg
 
 
 port txOut : String -> Cmd msg
@@ -181,6 +183,7 @@ type Msg
     | ReceivedConnectFromJS String
     | SendInitTransaction
     | SendUpdateTransaction
+    | ViewRoutes
       ---
     | OpenView ContentView
     | ShowWalletModal
@@ -224,6 +227,9 @@ update msg model =
 
         SendUpdateTransaction ->
             ( model, sendUpdateTransaction (encodeCoord model.currAddress model.currLabel model.currCoordinate) )
+
+        ViewRoutes ->
+            ( model, viewRoutes model.currAddress )
 
         ShowWalletModal ->
             ( { model | isModalVisible = True }, Cmd.none )

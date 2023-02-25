@@ -10540,28 +10540,59 @@ var $author$project$Main$Coordinate = F2(
 	function (lat, lon) {
 		return {lat: lat, lon: lon};
 	});
-var $author$project$Main$SubmitCoordinate = function (a) {
-	return {$: 'SubmitCoordinate', a: a};
+var $author$project$Main$MainView = {$: 'MainView'};
+var $pablen$toasty$Toasty$Stack = F2(
+	function (a, b) {
+		return {$: 'Stack', a: a, b: b};
+	});
+var $elm$random$Random$Seed = F2(
+	function (a, b) {
+		return {$: 'Seed', a: a, b: b};
+	});
+var $elm$random$Random$next = function (_v0) {
+	var state0 = _v0.a;
+	var incr = _v0.b;
+	return A2($elm$random$Random$Seed, ((state0 * 1664525) + incr) >>> 0, incr);
 };
+var $elm$random$Random$initialSeed = function (x) {
+	var _v0 = $elm$random$Random$next(
+		A2($elm$random$Random$Seed, 0, 1013904223));
+	var state1 = _v0.a;
+	var incr = _v0.b;
+	var state2 = (state1 + x) >>> 0;
+	return $elm$random$Random$next(
+		A2($elm$random$Random$Seed, state2, incr));
+};
+var $pablen$toasty$Toasty$initialState = A2(
+	$pablen$toasty$Toasty$Stack,
+	_List_Nil,
+	$elm$random$Random$initialSeed(0));
 var $author$project$Main$init = function (_v0) {
 	return _Utils_Tuple2(
 		{
 			currAddress: '',
+			currContentView: $author$project$Main$MainView,
 			currCoordinate: A2($author$project$Main$Coordinate, 0, 0),
 			currLabel: 'Null Island',
-			isWeb3Available: false
+			features: _List_Nil,
+			isModalVisible: false,
+			isWeb3Available: false,
+			isWeb3Connected: false,
+			toasties: $pablen$toasty$Toasty$initialState
 		},
-		A2(
-			$elm$core$Task$perform,
-			$elm$core$Basics$identity,
-			$elm$core$Task$succeed(
-				$author$project$Main$SubmitCoordinate(
-					A2($author$project$Main$Coordinate, 0, 0)))));
+		$elm$core$Platform$Cmd$none);
+};
+var $author$project$Main$ReceivedConnectFromJS = function (a) {
+	return {$: 'ReceivedConnectFromJS', a: a};
 };
 var $elm$core$Platform$Sub$batch = _Platform_batch;
-var $elm$core$Platform$Sub$none = $elm$core$Platform$Sub$batch(_List_Nil);
+var $author$project$Main$receiveConnect = _Platform_incomingPort('receiveConnect', $elm$json$Json$Decode$string);
 var $author$project$Main$subscriptions = function (_v0) {
-	return $elm$core$Platform$Sub$none;
+	return $elm$core$Platform$Sub$batch(
+		_List_fromArray(
+			[
+				$author$project$Main$receiveConnect($author$project$Main$ReceivedConnectFromJS)
+			]));
 };
 var $rtfeldman$elm_css$VirtualDom$Styled$accumulateStyles = F2(
 	function (_v0, styles) {
@@ -12718,17 +12749,549 @@ var $rtfeldman$elm_css$VirtualDom$Styled$toUnstyled = function (vdom) {
 	}
 };
 var $rtfeldman$elm_css$Html$Styled$toUnstyled = $rtfeldman$elm_css$VirtualDom$Styled$toUnstyled;
+var $author$project$Main$SendInitTransaction = {$: 'SendInitTransaction'};
+var $pablen$toasty$Toasty$Defaults$Success = F2(
+	function (a, b) {
+		return {$: 'Success', a: a, b: b};
+	});
+var $author$project$Main$ToastyMsg = function (a) {
+	return {$: 'ToastyMsg', a: a};
+};
+var $pablen$toasty$Toasty$Temporary = {$: 'Temporary'};
+var $pablen$toasty$Toasty$Entered = {$: 'Entered'};
+var $pablen$toasty$Toasty$TransitionOut = function (a) {
+	return {$: 'TransitionOut', a: a};
+};
+var $elm$random$Random$Generator = function (a) {
+	return {$: 'Generator', a: a};
+};
+var $elm$random$Random$peel = function (_v0) {
+	var state = _v0.a;
+	var word = (state ^ (state >>> ((state >>> 28) + 4))) * 277803737;
+	return ((word >>> 22) ^ word) >>> 0;
+};
+var $elm$random$Random$int = F2(
+	function (a, b) {
+		return $elm$random$Random$Generator(
+			function (seed0) {
+				var _v0 = (_Utils_cmp(a, b) < 0) ? _Utils_Tuple2(a, b) : _Utils_Tuple2(b, a);
+				var lo = _v0.a;
+				var hi = _v0.b;
+				var range = (hi - lo) + 1;
+				if (!((range - 1) & range)) {
+					return _Utils_Tuple2(
+						(((range - 1) & $elm$random$Random$peel(seed0)) >>> 0) + lo,
+						$elm$random$Random$next(seed0));
+				} else {
+					var threshhold = (((-range) >>> 0) % range) >>> 0;
+					var accountForBias = function (seed) {
+						accountForBias:
+						while (true) {
+							var x = $elm$random$Random$peel(seed);
+							var seedN = $elm$random$Random$next(seed);
+							if (_Utils_cmp(x, threshhold) < 0) {
+								var $temp$seed = seedN;
+								seed = $temp$seed;
+								continue accountForBias;
+							} else {
+								return _Utils_Tuple2((x % range) + lo, seedN);
+							}
+						}
+					};
+					return accountForBias(seed0);
+				}
+			});
+	});
+var $elm$random$Random$maxInt = 2147483647;
+var $elm$random$Random$minInt = -2147483648;
+var $elm$random$Random$step = F2(
+	function (_v0, seed) {
+		var generator = _v0.a;
+		return generator(seed);
+	});
+var $pablen$toasty$Toasty$getNewId = function (seed) {
+	return A2(
+		$elm$random$Random$step,
+		A2($elm$random$Random$int, $elm$random$Random$minInt, $elm$random$Random$maxInt),
+		seed);
+};
+var $elm$core$Process$sleep = _Process_sleep;
+var $pablen$toasty$Toasty$addToast_ = F5(
+	function (removeBehaviour, _v0, tagger, toast, _v1) {
+		var cfg = _v0.a;
+		var model = _v1.a;
+		var cmd = _v1.b;
+		var _v2 = model.toasties;
+		var toasts = _v2.a;
+		var seed = _v2.b;
+		var _v3 = $pablen$toasty$Toasty$getNewId(seed);
+		var newId = _v3.a;
+		var newSeed = _v3.b;
+		var task = function () {
+			if (removeBehaviour.$ === 'Temporary') {
+				return A2(
+					$elm$core$Task$perform,
+					function (_v5) {
+						return tagger(
+							$pablen$toasty$Toasty$TransitionOut(newId));
+					},
+					$elm$core$Process$sleep(cfg.delay));
+			} else {
+				return $elm$core$Platform$Cmd$none;
+			}
+		}();
+		return _Utils_Tuple2(
+			_Utils_update(
+				model,
+				{
+					toasties: A2(
+						$pablen$toasty$Toasty$Stack,
+						_Utils_ap(
+							toasts,
+							_List_fromArray(
+								[
+									_Utils_Tuple3(newId, $pablen$toasty$Toasty$Entered, toast)
+								])),
+						newSeed)
+				}),
+			$elm$core$Platform$Cmd$batch(
+				_List_fromArray(
+					[cmd, task])));
+	});
+var $pablen$toasty$Toasty$addToast = $pablen$toasty$Toasty$addToast_($pablen$toasty$Toasty$Temporary);
+var $pablen$toasty$Toasty$Config = function (a) {
+	return {$: 'Config', a: a};
+};
+var $pablen$toasty$Toasty$config = $pablen$toasty$Toasty$Config(
+	{containerAttrs: _List_Nil, delay: 5000, itemAttrs: _List_Nil, transitionInAttrs: _List_Nil, transitionOutAttrs: _List_Nil, transitionOutDuration: 0});
+var $pablen$toasty$Toasty$containerAttrs = F2(
+	function (attrs, _v0) {
+		var cfg = _v0.a;
+		return $pablen$toasty$Toasty$Config(
+			_Utils_update(
+				cfg,
+				{containerAttrs: attrs}));
+	});
+var $pablen$toasty$Toasty$Defaults$containerAttrs = _List_fromArray(
+	[
+		A2($elm$html$Html$Attributes$style, 'position', 'fixed'),
+		A2($elm$html$Html$Attributes$style, 'top', '0'),
+		A2($elm$html$Html$Attributes$style, 'right', '0'),
+		A2($elm$html$Html$Attributes$style, 'width', '100%'),
+		A2($elm$html$Html$Attributes$style, 'max-width', '300px'),
+		A2($elm$html$Html$Attributes$style, 'list-style-type', 'none'),
+		A2($elm$html$Html$Attributes$style, 'padding', '0'),
+		A2($elm$html$Html$Attributes$style, 'margin', '0')
+	]);
+var $pablen$toasty$Toasty$delay = F2(
+	function (time, _v0) {
+		var cfg = _v0.a;
+		return $pablen$toasty$Toasty$Config(
+			_Utils_update(
+				cfg,
+				{delay: time}));
+	});
+var $pablen$toasty$Toasty$itemAttrs = F2(
+	function (attrs, _v0) {
+		var cfg = _v0.a;
+		return $pablen$toasty$Toasty$Config(
+			_Utils_update(
+				cfg,
+				{itemAttrs: attrs}));
+	});
+var $pablen$toasty$Toasty$Defaults$itemAttrs = _List_fromArray(
+	[
+		A2($elm$html$Html$Attributes$style, 'margin', '1em 1em 0 1em'),
+		A2($elm$html$Html$Attributes$style, 'max-height', '100px'),
+		A2($elm$html$Html$Attributes$style, 'transition', 'max-height 0.6s, margin-top 0.6s')
+	]);
+var $pablen$toasty$Toasty$transitionInAttrs = F2(
+	function (attrs, _v0) {
+		var cfg = _v0.a;
+		return $pablen$toasty$Toasty$Config(
+			_Utils_update(
+				cfg,
+				{transitionInAttrs: attrs}));
+	});
+var $pablen$toasty$Toasty$Defaults$transitionInAttrs = _List_fromArray(
+	[
+		$elm$html$Html$Attributes$class('animated bounceInRight')
+	]);
+var $pablen$toasty$Toasty$transitionOutAttrs = F2(
+	function (attrs, _v0) {
+		var cfg = _v0.a;
+		return $pablen$toasty$Toasty$Config(
+			_Utils_update(
+				cfg,
+				{transitionOutAttrs: attrs}));
+	});
+var $pablen$toasty$Toasty$Defaults$transitionOutAttrs = _List_fromArray(
+	[
+		$elm$html$Html$Attributes$class('animated fadeOutRightBig'),
+		A2($elm$html$Html$Attributes$style, 'max-height', '0'),
+		A2($elm$html$Html$Attributes$style, 'margin-top', '0')
+	]);
+var $pablen$toasty$Toasty$transitionOutDuration = F2(
+	function (time, _v0) {
+		var cfg = _v0.a;
+		return $pablen$toasty$Toasty$Config(
+			_Utils_update(
+				cfg,
+				{transitionOutDuration: time}));
+	});
+var $pablen$toasty$Toasty$Defaults$config = A2(
+	$pablen$toasty$Toasty$delay,
+	5000,
+	A2(
+		$pablen$toasty$Toasty$itemAttrs,
+		$pablen$toasty$Toasty$Defaults$itemAttrs,
+		A2(
+			$pablen$toasty$Toasty$containerAttrs,
+			$pablen$toasty$Toasty$Defaults$containerAttrs,
+			A2(
+				$pablen$toasty$Toasty$transitionInAttrs,
+				$pablen$toasty$Toasty$Defaults$transitionInAttrs,
+				A2(
+					$pablen$toasty$Toasty$transitionOutAttrs,
+					$pablen$toasty$Toasty$Defaults$transitionOutAttrs,
+					A2($pablen$toasty$Toasty$transitionOutDuration, 700, $pablen$toasty$Toasty$config))))));
+var $author$project$Main$myConfig = A2(
+	$pablen$toasty$Toasty$containerAttrs,
+	_List_fromArray(
+		[
+			A2($elm$html$Html$Attributes$style, 'position', 'fixed'),
+			A2($elm$html$Html$Attributes$style, 'top', '90px'),
+			A2($elm$html$Html$Attributes$style, 'right', '0'),
+			A2($elm$html$Html$Attributes$style, 'width', '100%'),
+			A2($elm$html$Html$Attributes$style, 'max-width', '300px'),
+			A2($elm$html$Html$Attributes$style, 'list-style-type', 'none'),
+			A2($elm$html$Html$Attributes$style, 'padding', '0'),
+			A2($elm$html$Html$Attributes$style, 'margin', '0')
+		]),
+	A2($pablen$toasty$Toasty$delay, 3000, $pablen$toasty$Toasty$Defaults$config));
+var $author$project$Main$addToast = F2(
+	function (toast, _v0) {
+		var model = _v0.a;
+		var cmd = _v0.b;
+		return A4(
+			$pablen$toasty$Toasty$addToast,
+			$author$project$Main$myConfig,
+			$author$project$Main$ToastyMsg,
+			toast,
+			_Utils_Tuple2(model, cmd));
+	});
+var $elm$json$Json$Encode$float = _Json_wrap;
+var $author$project$Main$encodeCoord = F3(
+	function (address, label, coord) {
+		return $elm$json$Json$Encode$object(
+			_List_fromArray(
+				[
+					_Utils_Tuple2(
+					'lat',
+					$elm$json$Json$Encode$float(coord.lat)),
+					_Utils_Tuple2(
+					'lon',
+					$elm$json$Json$Encode$float(coord.lon)),
+					_Utils_Tuple2(
+					'label',
+					$elm$json$Json$Encode$string(label)),
+					_Utils_Tuple2(
+					'address',
+					$elm$json$Json$Encode$string(address))
+				]));
+	});
+var $author$project$MapCommands$elmMapboxOutgoing = _Platform_outgoingPort('elmMapboxOutgoing', $elm$core$Basics$identity);
+var $gampleman$elm_mapbox$LngLat$encodeAsPair = function (_v0) {
+	var lng = _v0.lng;
+	var lat = _v0.lat;
+	return A2(
+		$elm$json$Json$Encode$list,
+		$elm$json$Json$Encode$float,
+		_List_fromArray(
+			[lng, lat]));
+};
+var $gampleman$elm_mapbox$Mapbox$Cmd$Template$encodeOptions = function (opts) {
+	return _Utils_Tuple2(
+		'options',
+		$elm$json$Json$Encode$object(
+			A2(
+				$elm$core$List$map,
+				function (_v0) {
+					var key = _v0.a;
+					var val = _v0.b;
+					return _Utils_Tuple2(key, val);
+				},
+				opts)));
+};
+var $gampleman$elm_mapbox$Mapbox$Helpers$encodePair = F2(
+	function (encoder, _v0) {
+		var a = _v0.a;
+		var b = _v0.b;
+		return A2(
+			$elm$json$Json$Encode$list,
+			encoder,
+			_List_fromArray(
+				[a, b]));
+	});
+var $gampleman$elm_mapbox$Mapbox$Cmd$Template$makeCmd = F4(
+	function (prt, id, command, params) {
+		return prt(
+			$elm$json$Json$Encode$object(
+				A2(
+					$elm$core$List$cons,
+					_Utils_Tuple2(
+						'command',
+						$elm$json$Json$Encode$string(command)),
+					A2(
+						$elm$core$List$cons,
+						_Utils_Tuple2(
+							'target',
+							$elm$json$Json$Encode$string(id)),
+						params))));
+	});
+var $gampleman$elm_mapbox$Mapbox$Cmd$Template$fitBounds = F4(
+	function (prt, id, options, bounds) {
+		return A4(
+			$gampleman$elm_mapbox$Mapbox$Cmd$Template$makeCmd,
+			prt,
+			id,
+			'fitBounds',
+			_List_fromArray(
+				[
+					_Utils_Tuple2(
+					'bounds',
+					A2($gampleman$elm_mapbox$Mapbox$Helpers$encodePair, $gampleman$elm_mapbox$LngLat$encodeAsPair, bounds)),
+					$gampleman$elm_mapbox$Mapbox$Cmd$Template$encodeOptions(options)
+				]));
+	});
+var $author$project$MapCommands$id = 'my-map';
+var $author$project$MapCommands$fitBounds = A2($gampleman$elm_mapbox$Mapbox$Cmd$Template$fitBounds, $author$project$MapCommands$elmMapboxOutgoing, $author$project$MapCommands$id);
+var $gampleman$elm_mapbox$Mapbox$Cmd$Internal$Option = F2(
+	function (a, b) {
+		return {$: 'Option', a: a, b: b};
+	});
+var $elm$json$Json$Encode$bool = _Json_wrap;
+var $gampleman$elm_mapbox$Mapbox$Cmd$Option$linear = A2(
+	$elm$core$Basics$composeR,
+	$elm$json$Json$Encode$bool,
+	$gampleman$elm_mapbox$Mapbox$Cmd$Internal$Option('linear'));
+var $gampleman$elm_mapbox$LngLat$map = F2(
+	function (f, _v0) {
+		var lng = _v0.lng;
+		var lat = _v0.lat;
+		return {
+			lat: f(lat),
+			lng: f(lng)
+		};
+	});
+var $gampleman$elm_mapbox$Mapbox$Cmd$Option$maxZoom = A2(
+	$elm$core$Basics$composeR,
+	$elm$json$Json$Encode$float,
+	$gampleman$elm_mapbox$Mapbox$Cmd$Internal$Option('maxZoom'));
+var $author$project$Main$message = function (msg) {
+	return A2(
+		$elm$core$Task$perform,
+		$elm$core$Basics$identity,
+		A2(
+			$elm$core$Task$andThen,
+			$elm$core$Basics$always(
+				$elm$core$Task$succeed(msg)),
+			$elm$core$Process$sleep(0)));
+};
+var $author$project$Main$newTab = _Platform_outgoingPort('newTab', $elm$json$Json$Encode$string);
+var $author$project$Main$sendData = _Platform_outgoingPort('sendData', $elm$json$Json$Encode$string);
+var $author$project$Main$sendInitTransaction = _Platform_outgoingPort('sendInitTransaction', $elm$core$Basics$identity);
+var $author$project$Main$sendUpdateTransaction = _Platform_outgoingPort('sendUpdateTransaction', $elm$core$Basics$identity);
+var $elm$core$String$toFloat = _String_toFloat;
+var $pablen$toasty$Toasty$Leaving = {$: 'Leaving'};
+var $pablen$toasty$Toasty$Remove = function (a) {
+	return {$: 'Remove', a: a};
+};
+var $pablen$toasty$Toasty$update = F4(
+	function (_v0, tagger, msg, model) {
+		var cfg = _v0.a;
+		var _v1 = model.toasties;
+		var toasts = _v1.a;
+		var seed = _v1.b;
+		switch (msg.$) {
+			case 'Add':
+				var toast = msg.a;
+				return A4(
+					$pablen$toasty$Toasty$addToast,
+					$pablen$toasty$Toasty$config,
+					tagger,
+					toast,
+					_Utils_Tuple2(model, $elm$core$Platform$Cmd$none));
+			case 'Remove':
+				var targetId = msg.a;
+				var newStack = A2(
+					$elm$core$List$filter,
+					function (_v3) {
+						var id = _v3.a;
+						var toast = _v3.b;
+						var status = _v3.c;
+						return !_Utils_eq(id, targetId);
+					},
+					toasts);
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{
+							toasties: A2($pablen$toasty$Toasty$Stack, newStack, seed)
+						}),
+					$elm$core$Platform$Cmd$none);
+			default:
+				var targetId = msg.a;
+				var newStack = A2(
+					$elm$core$List$map,
+					function (_v5) {
+						var id = _v5.a;
+						var status = _v5.b;
+						var toast = _v5.c;
+						return _Utils_eq(id, targetId) ? _Utils_Tuple3(id, $pablen$toasty$Toasty$Leaving, toast) : _Utils_Tuple3(id, status, toast);
+					},
+					toasts);
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{
+							toasties: A2($pablen$toasty$Toasty$Stack, newStack, seed)
+						}),
+					A2(
+						$elm$core$Task$perform,
+						function (_v4) {
+							return tagger(
+								$pablen$toasty$Toasty$Remove(targetId));
+						},
+						$elm$core$Process$sleep(cfg.transitionOutDuration)));
+		}
+	});
+var $author$project$Main$walletConnect = _Platform_outgoingPort('walletConnect', $elm$json$Json$Encode$string);
 var $author$project$Main$update = F2(
 	function (msg, model) {
-		if (msg.$ === 'SubmitCoordinate') {
-			var coord = msg.a;
-			return _Utils_Tuple2(
-				_Utils_update(
+		switch (msg.$) {
+			case 'SubmitCoordinate':
+				var x = A2($author$project$Main$Coordinate, 0, 0);
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{currContentView: $author$project$Main$MainView}),
+					$author$project$Main$message($author$project$Main$SendInitTransaction));
+			case 'OpenView':
+				var vw = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{currContentView: vw}),
+					$author$project$Main$sendData('view'));
+			case 'Web3Connect':
+				return _Utils_Tuple2(
 					model,
-					{currCoordinate: coord}),
-				$elm$core$Platform$Cmd$none);
-		} else {
-			return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+					$author$project$Main$walletConnect('ccd'));
+			case 'ReceivedConnectFromJS':
+				var addr = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{currAddress: addr, isWeb3Available: true, isWeb3Connected: true}),
+					$elm$core$Platform$Cmd$none);
+			case 'SendInitTransaction':
+				return A2(
+					$author$project$Main$addToast,
+					A2($pablen$toasty$Toasty$Defaults$Success, 'Allright!', 'Coordinate successfully placed!'),
+					_Utils_Tuple2(
+						model,
+						$author$project$Main$sendInitTransaction(
+							A3($author$project$Main$encodeCoord, model.currAddress, model.currLabel, model.currCoordinate))));
+			case 'SendUpdateTransaction':
+				return _Utils_Tuple2(
+					model,
+					$author$project$Main$sendUpdateTransaction(
+						A3($author$project$Main$encodeCoord, model.currAddress, model.currLabel, model.currCoordinate)));
+			case 'ShowWalletModal':
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{isModalVisible: true}),
+					$elm$core$Platform$Cmd$none);
+			case 'CloseWalletModal':
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{isModalVisible: false}),
+					$elm$core$Platform$Cmd$none);
+			case 'MapClick':
+				var lngLat = msg.a.lngLat;
+				var renderedFeatures = msg.a.renderedFeatures;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{features: renderedFeatures}),
+					A2(
+						$author$project$MapCommands$fitBounds,
+						_List_fromArray(
+							[
+								$gampleman$elm_mapbox$Mapbox$Cmd$Option$linear(true),
+								$gampleman$elm_mapbox$Mapbox$Cmd$Option$maxZoom(10)
+							]),
+						_Utils_Tuple2(
+							A2(
+								$gampleman$elm_mapbox$LngLat$map,
+								function (a) {
+									return a - 0.2;
+								},
+								lngLat),
+							A2(
+								$gampleman$elm_mapbox$LngLat$map,
+								function (a) {
+									return a + 0.2;
+								},
+								lngLat))));
+			case 'RedirectToExplorer':
+				var dest = msg.a;
+				return _Utils_Tuple2(
+					model,
+					$author$project$Main$newTab(dest));
+			case 'SetLatitude':
+				var lat = msg.a;
+				var nc = A2(
+					$author$project$Main$Coordinate,
+					A2(
+						$elm$core$Maybe$withDefault,
+						model.currCoordinate.lat,
+						$elm$core$String$toFloat(lat)),
+					model.currCoordinate.lon);
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{currCoordinate: nc}),
+					$elm$core$Platform$Cmd$none);
+			case 'SetLongitude':
+				var lon = msg.a;
+				var nc = A2(
+					$author$project$Main$Coordinate,
+					model.currCoordinate.lat,
+					A2(
+						$elm$core$Maybe$withDefault,
+						model.currCoordinate.lon,
+						$elm$core$String$toFloat(lon)));
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{currCoordinate: nc}),
+					$elm$core$Platform$Cmd$none);
+			case 'SetLabel':
+				var label = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{currLabel: label}),
+					$elm$core$Platform$Cmd$none);
+			case 'ToastyMsg':
+				var subMsg = msg.a;
+				return A4($pablen$toasty$Toasty$update, $author$project$Main$myConfig, $author$project$Main$ToastyMsg, subMsg, model);
+			default:
+				return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 		}
 	});
 var $rtfeldman$elm_css$Css$Preprocess$ApplyStyles = function (a) {
@@ -12905,6 +13468,7 @@ var $rtfeldman$elm_css$VirtualDom$Styled$Unstyled = function (a) {
 	return {$: 'Unstyled', a: a};
 };
 var $rtfeldman$elm_css$VirtualDom$Styled$unstyledNode = $rtfeldman$elm_css$VirtualDom$Styled$Unstyled;
+var $rtfeldman$elm_css$Html$Styled$fromUnstyled = $rtfeldman$elm_css$VirtualDom$Styled$unstyledNode;
 var $rtfeldman$elm_css$Css$Global$global = function (snippets) {
 	return $rtfeldman$elm_css$VirtualDom$Styled$unstyledNode(
 		A3(
@@ -13961,6 +14525,120 @@ var $rtfeldman$elm_css$VirtualDom$Styled$attribute = F2(
 			'');
 	});
 var $rtfeldman$elm_css$Html$Styled$Attributes$rel = $rtfeldman$elm_css$VirtualDom$Styled$attribute('rel');
+var $rtfeldman$elm_css$VirtualDom$Styled$text = function (str) {
+	return $rtfeldman$elm_css$VirtualDom$Styled$Unstyled(
+		$elm$virtual_dom$VirtualDom$text(str));
+};
+var $rtfeldman$elm_css$Html$Styled$text = $rtfeldman$elm_css$VirtualDom$Styled$text;
+var $pablen$toasty$Toasty$itemContainer = F4(
+	function (_v0, tagger, _v1, toastView) {
+		var cfg = _v0.a;
+		var id = _v1.a;
+		var status = _v1.b;
+		var toast = _v1.c;
+		var attrs = function () {
+			if (status.$ === 'Entered') {
+				return cfg.transitionInAttrs;
+			} else {
+				return cfg.transitionOutAttrs;
+			}
+		}();
+		return _Utils_Tuple2(
+			$elm$core$String$fromInt(id),
+			A2(
+				$elm$html$Html$li,
+				_Utils_ap(
+					cfg.itemAttrs,
+					_Utils_ap(
+						attrs,
+						_List_fromArray(
+							[
+								$elm$html$Html$Events$onClick(
+								tagger(
+									$pablen$toasty$Toasty$TransitionOut(id)))
+							]))),
+				_List_fromArray(
+					[
+						toastView(toast)
+					])));
+	});
+var $elm$html$Html$Keyed$ol = $elm$html$Html$Keyed$node('ol');
+var $pablen$toasty$Toasty$view = F4(
+	function (cfg, toastView, tagger, _v0) {
+		var toasts = _v0.a;
+		var seed = _v0.b;
+		var _v1 = cfg;
+		var c = _v1.a;
+		return $elm$core$List$isEmpty(toasts) ? $elm$html$Html$text('') : A2(
+			$elm$html$Html$Keyed$ol,
+			c.containerAttrs,
+			A2(
+				$elm$core$List$map,
+				function (toast) {
+					return A4($pablen$toasty$Toasty$itemContainer, cfg, tagger, toast, toastView);
+				},
+				toasts));
+	});
+var $elm$html$Html$h1 = _VirtualDom_node('h1');
+var $pablen$toasty$Toasty$Defaults$genericToast = F3(
+	function (variantClass, title, message) {
+		return A2(
+			$elm$html$Html$div,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$class('toasty-container'),
+					$elm$html$Html$Attributes$class(variantClass)
+				]),
+			_List_fromArray(
+				[
+					A2(
+					$elm$html$Html$h1,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$class('toasty-title')
+						]),
+					_List_fromArray(
+						[
+							$elm$html$Html$text(title)
+						])),
+					$elm$core$String$isEmpty(message) ? $elm$html$Html$text('') : A2(
+					$elm$html$Html$p,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$class('toasty-message')
+						]),
+					_List_fromArray(
+						[
+							$elm$html$Html$text(message)
+						]))
+				]));
+	});
+var $pablen$toasty$Toasty$Defaults$view = function (toast) {
+	switch (toast.$) {
+		case 'Success':
+			var title = toast.a;
+			var message = toast.b;
+			return A3($pablen$toasty$Toasty$Defaults$genericToast, 'toasty-success', title, message);
+		case 'Warning':
+			var title = toast.a;
+			var message = toast.b;
+			return A3($pablen$toasty$Toasty$Defaults$genericToast, 'toasty-warning', title, message);
+		default:
+			var title = toast.a;
+			var message = toast.b;
+			return A3($pablen$toasty$Toasty$Defaults$genericToast, 'toasty-error', title, message);
+	}
+};
+var $author$project$Main$SetLabel = function (a) {
+	return {$: 'SetLabel', a: a};
+};
+var $author$project$Main$SetLatitude = function (a) {
+	return {$: 'SetLatitude', a: a};
+};
+var $author$project$Main$SetLongitude = function (a) {
+	return {$: 'SetLongitude', a: a};
+};
+var $author$project$Main$SubmitCoordinate = {$: 'SubmitCoordinate'};
 var $rtfeldman$elm_css$Css$backgroundColor = function (c) {
 	return A2($rtfeldman$elm_css$Css$property, 'background-color', c.value);
 };
@@ -14013,17 +14691,15 @@ var $author$project$Util$btnGreen = F2(
 				attr),
 			h);
 	});
-var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$gap_0 = A2($rtfeldman$elm_css$Css$property, 'gap', '0px');
-var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$gap_6 = A2($rtfeldman$elm_css$Css$property, 'gap', '1.5rem');
+var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$col_span_1 = A2($rtfeldman$elm_css$Css$property, 'grid-column', 'span 1 / span 1');
+var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$col_span_6 = A2($rtfeldman$elm_css$Css$property, 'grid-column', 'span 6 / span 6');
+var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$gap_12 = A2($rtfeldman$elm_css$Css$property, 'gap', '3rem');
+var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$gap_4 = A2($rtfeldman$elm_css$Css$property, 'gap', '1rem');
 var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$grid = A2($rtfeldman$elm_css$Css$property, 'display', 'grid');
-var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$grid_cols_2 = A2($rtfeldman$elm_css$Css$property, 'grid-template-columns', 'repeat(2, minmax(0, 1fr))');
+var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$grid_cols_1 = A2($rtfeldman$elm_css$Css$property, 'grid-template-columns', 'repeat(1, minmax(0, 1fr))');
+var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$grid_flow_col = A2($rtfeldman$elm_css$Css$property, 'grid-auto-flow', 'column');
 var $rtfeldman$elm_css$Html$Styled$br = $rtfeldman$elm_css$Html$Styled$node('br');
 var $elm$core$String$lines = _String_lines;
-var $rtfeldman$elm_css$VirtualDom$Styled$text = function (str) {
-	return $rtfeldman$elm_css$VirtualDom$Styled$Unstyled(
-		$elm$virtual_dom$VirtualDom$text(str));
-};
-var $rtfeldman$elm_css$Html$Styled$text = $rtfeldman$elm_css$VirtualDom$Styled$text;
 var $author$project$Util$htmlAddedBrFromString = function (str) {
 	return A2(
 		$elm$core$List$intersperse,
@@ -14033,6 +14709,163 @@ var $author$project$Util$htmlAddedBrFromString = function (str) {
 			$rtfeldman$elm_css$Html$Styled$text,
 			$elm$core$String$lines(str)));
 };
+var $rtfeldman$elm_css$Html$Styled$input = $rtfeldman$elm_css$Html$Styled$node('input');
+var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$border_gray_400 = $rtfeldman$elm_css$Css$batch(
+	_List_fromArray(
+		[
+			A2($rtfeldman$elm_css$Css$property, '--tw-border-opacity', '1'),
+			A2($rtfeldman$elm_css$Css$property, 'border-color', 'rgba(156, 163, 175, var(--tw-border-opacity))')
+		]));
+var $author$project$Util$styleInputCss = $rtfeldman$elm_css$Css$batch(
+	_List_fromArray(
+		[
+			$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$w_full,
+			$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$rounded_lg,
+			$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$border,
+			$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$border_solid,
+			$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$border_gray_400,
+			$rtfeldman$elm_css$Css$focus(
+			_List_fromArray(
+				[
+					$rtfeldman$elm_css$Css$borderColor($author$project$Util$colorGreen),
+					$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$outline_none
+				]))
+		]));
+var $author$project$Util$inputS = A2(
+	$rtfeldman$elm_css$Html$Styled$styled,
+	$rtfeldman$elm_css$Html$Styled$input,
+	_List_fromArray(
+		[$author$project$Util$styleInputCss, $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$p_3]));
+var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$items_start = A2($rtfeldman$elm_css$Css$property, 'align-items', 'flex-start');
+var $rtfeldman$elm_css$Css$marginTop = $rtfeldman$elm_css$Css$prop1('margin-top');
+var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$my_6 = $rtfeldman$elm_css$Css$batch(
+	_List_fromArray(
+		[
+			A2($rtfeldman$elm_css$Css$property, 'margin-top', '1.5rem'),
+			A2($rtfeldman$elm_css$Css$property, 'margin-bottom', '1.5rem')
+		]));
+var $rtfeldman$elm_css$Html$Styled$Attributes$name = $rtfeldman$elm_css$Html$Styled$Attributes$stringProperty('name');
+var $rtfeldman$elm_css$VirtualDom$Styled$on = F2(
+	function (eventName, handler) {
+		return A3(
+			$rtfeldman$elm_css$VirtualDom$Styled$Attribute,
+			A2($elm$virtual_dom$VirtualDom$on, eventName, handler),
+			_List_Nil,
+			'');
+	});
+var $rtfeldman$elm_css$Html$Styled$Events$on = F2(
+	function (event, decoder) {
+		return A2(
+			$rtfeldman$elm_css$VirtualDom$Styled$on,
+			event,
+			$elm$virtual_dom$VirtualDom$Normal(decoder));
+	});
+var $rtfeldman$elm_css$Html$Styled$Events$onClick = function (msg) {
+	return A2(
+		$rtfeldman$elm_css$Html$Styled$Events$on,
+		'click',
+		$elm$json$Json$Decode$succeed(msg));
+};
+var $rtfeldman$elm_css$Html$Styled$Events$alwaysStop = function (x) {
+	return _Utils_Tuple2(x, true);
+};
+var $rtfeldman$elm_css$Html$Styled$Events$stopPropagationOn = F2(
+	function (event, decoder) {
+		return A2(
+			$rtfeldman$elm_css$VirtualDom$Styled$on,
+			event,
+			$elm$virtual_dom$VirtualDom$MayStopPropagation(decoder));
+	});
+var $rtfeldman$elm_css$Html$Styled$Events$targetValue = A2(
+	$elm$json$Json$Decode$at,
+	_List_fromArray(
+		['target', 'value']),
+	$elm$json$Json$Decode$string);
+var $rtfeldman$elm_css$Html$Styled$Events$onInput = function (tagger) {
+	return A2(
+		$rtfeldman$elm_css$Html$Styled$Events$stopPropagationOn,
+		'input',
+		A2(
+			$elm$json$Json$Decode$map,
+			$rtfeldman$elm_css$Html$Styled$Events$alwaysStop,
+			A2($elm$json$Json$Decode$map, tagger, $rtfeldman$elm_css$Html$Styled$Events$targetValue)));
+};
+var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$p_10 = A2($rtfeldman$elm_css$Css$property, 'padding', '2.5rem');
+var $rtfeldman$elm_css$Html$Styled$Attributes$placeholder = $rtfeldman$elm_css$Html$Styled$Attributes$stringProperty('placeholder');
+var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$relative = A2($rtfeldman$elm_css$Css$property, 'position', 'relative');
+var $rtfeldman$elm_css$Html$Styled$Attributes$step = function (n) {
+	return A2($rtfeldman$elm_css$Html$Styled$Attributes$stringProperty, 'step', n);
+};
+var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$text_center = A2($rtfeldman$elm_css$Css$property, 'text-align', 'center');
+var $rtfeldman$elm_css$Html$Styled$Attributes$type_ = $rtfeldman$elm_css$Html$Styled$Attributes$stringProperty('type');
+var $author$project$Main$OpenView = function (a) {
+	return {$: 'OpenView', a: a};
+};
+var $rtfeldman$elm_css$Css$Structure$PseudoElement = function (a) {
+	return {$: 'PseudoElement', a: a};
+};
+var $rtfeldman$elm_css$Css$Preprocess$WithPseudoElement = F2(
+	function (a, b) {
+		return {$: 'WithPseudoElement', a: a, b: b};
+	});
+var $rtfeldman$elm_css$Css$pseudoElement = function (element) {
+	return $rtfeldman$elm_css$Css$Preprocess$WithPseudoElement(
+		$rtfeldman$elm_css$Css$Structure$PseudoElement(element));
+};
+var $rtfeldman$elm_css$Css$after = $rtfeldman$elm_css$Css$pseudoElement('after');
+var $rtfeldman$elm_css$Css$auto = {alignItemsOrAuto: $rtfeldman$elm_css$Css$Structure$Compatible, cursor: $rtfeldman$elm_css$Css$Structure$Compatible, flexBasis: $rtfeldman$elm_css$Css$Structure$Compatible, intOrAuto: $rtfeldman$elm_css$Css$Structure$Compatible, justifyContentOrAuto: $rtfeldman$elm_css$Css$Structure$Compatible, lengthOrAuto: $rtfeldman$elm_css$Css$Structure$Compatible, lengthOrAutoOrCoverOrContain: $rtfeldman$elm_css$Css$Structure$Compatible, lengthOrNumberOrAutoOrNoneOrContent: $rtfeldman$elm_css$Css$Structure$Compatible, overflow: $rtfeldman$elm_css$Css$Structure$Compatible, pointerEvents: $rtfeldman$elm_css$Css$Structure$Compatible, tableLayout: $rtfeldman$elm_css$Css$Structure$Compatible, textRendering: $rtfeldman$elm_css$Css$Structure$Compatible, touchAction: $rtfeldman$elm_css$Css$Structure$Compatible, value: 'auto'};
+var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$bg_gray_300 = $rtfeldman$elm_css$Css$batch(
+	_List_fromArray(
+		[
+			A2($rtfeldman$elm_css$Css$property, '--tw-bg-opacity', '1'),
+			A2($rtfeldman$elm_css$Css$property, 'background-color', 'rgba(209, 213, 219, var(--tw-bg-opacity))')
+		]));
+var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$font_bold = A2($rtfeldman$elm_css$Css$property, 'font-weight', '700');
+var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$h_full = A2($rtfeldman$elm_css$Css$property, 'height', '100%');
+var $rtfeldman$elm_css$Svg$Styled$Attributes$d = $rtfeldman$elm_css$VirtualDom$Styled$attribute('d');
+var $rtfeldman$elm_css$Svg$Styled$Attributes$fill = $rtfeldman$elm_css$VirtualDom$Styled$attribute('fill');
+var $rtfeldman$elm_css$Svg$Styled$Attributes$height = $rtfeldman$elm_css$VirtualDom$Styled$attribute('height');
+var $rtfeldman$elm_css$VirtualDom$Styled$NodeNS = F4(
+	function (a, b, c, d) {
+		return {$: 'NodeNS', a: a, b: b, c: c, d: d};
+	});
+var $rtfeldman$elm_css$VirtualDom$Styled$nodeNS = $rtfeldman$elm_css$VirtualDom$Styled$NodeNS;
+var $rtfeldman$elm_css$Svg$Styled$node = $rtfeldman$elm_css$VirtualDom$Styled$nodeNS('http://www.w3.org/2000/svg');
+var $rtfeldman$elm_css$Svg$Styled$path = $rtfeldman$elm_css$Svg$Styled$node('path');
+var $rtfeldman$elm_css$Svg$Styled$svg = $rtfeldman$elm_css$Svg$Styled$node('svg');
+var $rtfeldman$elm_css$Svg$Styled$Attributes$viewBox = $rtfeldman$elm_css$VirtualDom$Styled$attribute('viewBox');
+var $rtfeldman$elm_css$Svg$Styled$Attributes$width = $rtfeldman$elm_css$VirtualDom$Styled$attribute('width');
+var $author$project$Icon$iconChevronLeft = A2(
+	$rtfeldman$elm_css$Svg$Styled$svg,
+	_List_fromArray(
+		[
+			$rtfeldman$elm_css$Svg$Styled$Attributes$width('19'),
+			$rtfeldman$elm_css$Svg$Styled$Attributes$height('19'),
+			$rtfeldman$elm_css$Svg$Styled$Attributes$viewBox('0 0 19 19'),
+			$rtfeldman$elm_css$Svg$Styled$Attributes$fill('none')
+		]),
+	_List_fromArray(
+		[
+			A2(
+			$rtfeldman$elm_css$Svg$Styled$path,
+			_List_fromArray(
+				[
+					$rtfeldman$elm_css$Svg$Styled$Attributes$d('M1.22191 10.3215L9.67716 18.7765C9.87271 18.9723 10.1338 19.0801 10.4121 19.0801C10.6905 19.0801 10.9515 18.9723 11.1471 18.7765L11.7698 18.154C12.1749 17.7484 12.1749 17.0891 11.7698 16.6841L4.66969 9.58402L11.7776 2.47607C11.9732 2.28035 12.0812 2.01945 12.0812 1.74125C12.0812 1.46274 11.9732 1.20184 11.7776 1.00597L11.155 0.383611C10.9593 0.187897 10.6984 0.0800775 10.42 0.0800775C10.1416 0.0800775 9.88059 0.187897 9.68503 0.383611L1.22191 8.84642C1.02589 9.04275 0.918225 9.30489 0.918843 9.58355C0.918225 9.8633 1.02589 10.1253 1.22191 10.3215Z'),
+					$rtfeldman$elm_css$Svg$Styled$Attributes$fill('#A5A5A5')
+				]),
+			_List_Nil)
+		]));
+var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$inset_0 = $rtfeldman$elm_css$Css$batch(
+	_List_fromArray(
+		[
+			A2($rtfeldman$elm_css$Css$property, 'top', '0px'),
+			A2($rtfeldman$elm_css$Css$property, 'right', '0px'),
+			A2($rtfeldman$elm_css$Css$property, 'bottom', '0px'),
+			A2($rtfeldman$elm_css$Css$property, 'left', '0px')
+		]));
+var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$items_center = A2($rtfeldman$elm_css$Css$property, 'align-items', 'center');
+var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$justify_center = A2($rtfeldman$elm_css$Css$property, 'justify-content', 'center');
+var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$m_auto = A2($rtfeldman$elm_css$Css$property, 'margin', 'auto');
 var $rtfeldman$elm_css$Css$Structure$CustomQuery = function (a) {
 	return {$: 'CustomQuery', a: a};
 };
@@ -14047,17 +14880,16185 @@ var $rtfeldman$elm_css$Css$Media$withMediaQuery = function (queries) {
 var $matheus23$elm_default_tailwind_modules$Tailwind$Breakpoints$md = $rtfeldman$elm_css$Css$Media$withMediaQuery(
 	_List_fromArray(
 		['(min-width: 768px)']));
-var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$mt_6 = A2($rtfeldman$elm_css$Css$property, 'margin-top', '1.5rem');
-var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$my_6 = $rtfeldman$elm_css$Css$batch(
+var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$rotate_0 = A2($rtfeldman$elm_css$Css$property, '--tw-rotate', '0deg');
+var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$rotate_90 = A2($rtfeldman$elm_css$Css$property, '--tw-rotate', '90deg');
+var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$rounded_full = A2($rtfeldman$elm_css$Css$property, 'border-radius', '9999px');
+var $rtfeldman$elm_css$Html$Styled$Attributes$title = $rtfeldman$elm_css$Html$Styled$Attributes$stringProperty('title');
+var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$top_0 = A2($rtfeldman$elm_css$Css$property, 'top', '0px');
+var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$transform = $rtfeldman$elm_css$Css$batch(
 	_List_fromArray(
 		[
-			A2($rtfeldman$elm_css$Css$property, 'margin-top', '1.5rem'),
-			A2($rtfeldman$elm_css$Css$property, 'margin-bottom', '1.5rem')
+			A2($rtfeldman$elm_css$Css$property, '--tw-translate-x', '0'),
+			A2($rtfeldman$elm_css$Css$property, '--tw-translate-y', '0'),
+			A2($rtfeldman$elm_css$Css$property, '--tw-rotate', '0'),
+			A2($rtfeldman$elm_css$Css$property, '--tw-skew-x', '0'),
+			A2($rtfeldman$elm_css$Css$property, '--tw-skew-y', '0'),
+			A2($rtfeldman$elm_css$Css$property, '--tw-scale-x', '1'),
+			A2($rtfeldman$elm_css$Css$property, '--tw-scale-y', '1'),
+			A2($rtfeldman$elm_css$Css$property, 'transform', 'translateX(var(--tw-translate-x)) translateY(var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))')
 		]));
+var $rtfeldman$elm_css$Css$width = $rtfeldman$elm_css$Css$prop1('width');
+var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$z_10 = A2($rtfeldman$elm_css$Css$property, 'z-index', '10');
+var $author$project$Main$viewBack = A2(
+	$rtfeldman$elm_css$Html$Styled$div,
+	_List_fromArray(
+		[
+			$rtfeldman$elm_css$Html$Styled$Attributes$css(
+			_List_fromArray(
+				[
+					$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$relative,
+					$rtfeldman$elm_css$Css$top(
+					$rtfeldman$elm_css$Css$px(-40)),
+					$matheus23$elm_default_tailwind_modules$Tailwind$Breakpoints$md(
+					_List_fromArray(
+						[
+							$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$absolute,
+							$rtfeldman$elm_css$Css$right(
+							$rtfeldman$elm_css$Css$px(70)),
+							$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$top_0
+						])),
+					$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$h_full,
+					$rtfeldman$elm_css$Css$after(
+					_List_fromArray(
+						[
+							A2($rtfeldman$elm_css$Css$property, 'content', '\'\''),
+							$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$absolute,
+							$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$inset_0,
+							$rtfeldman$elm_css$Css$height(
+							$rtfeldman$elm_css$Css$px(1)),
+							$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$w_full,
+							$matheus23$elm_default_tailwind_modules$Tailwind$Breakpoints$md(
+							_List_fromArray(
+								[
+									$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$h_full,
+									$rtfeldman$elm_css$Css$width(
+									$rtfeldman$elm_css$Css$px(1)),
+									$rtfeldman$elm_css$Css$right(
+									$rtfeldman$elm_css$Css$px(-28)),
+									$rtfeldman$elm_css$Css$left($rtfeldman$elm_css$Css$auto)
+								])),
+							$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$bg_gray_300,
+							$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$mx_auto
+						]))
+				]))
+		]),
+	_List_fromArray(
+		[
+			A2(
+			$rtfeldman$elm_css$Html$Styled$button,
+			_List_fromArray(
+				[
+					$rtfeldman$elm_css$Html$Styled$Attributes$css(
+					_List_fromArray(
+						[
+							$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$absolute,
+							$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$inset_0,
+							$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$m_auto,
+							$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$rounded_full,
+							$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$border,
+							$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$border_solid,
+							$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$border_gray_300,
+							$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$font_bold,
+							$rtfeldman$elm_css$Css$height(
+							$rtfeldman$elm_css$Css$px(56)),
+							$rtfeldman$elm_css$Css$width(
+							$rtfeldman$elm_css$Css$px(56)),
+							$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$flex,
+							$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$justify_center,
+							$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$items_center,
+							$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$bg_white,
+							$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$z_10,
+							$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$cursor_pointer,
+							$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$transform,
+							$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$rotate_90,
+							$matheus23$elm_default_tailwind_modules$Tailwind$Breakpoints$md(
+							_List_fromArray(
+								[$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$rotate_0]))
+						])),
+					$rtfeldman$elm_css$Html$Styled$Attributes$title('Back to Home'),
+					$rtfeldman$elm_css$Html$Styled$Events$onClick(
+					$author$project$Main$OpenView($author$project$Main$MainView))
+				]),
+			_List_fromArray(
+				[$author$project$Icon$iconChevronLeft]))
+		]));
+var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$text_2xl = $rtfeldman$elm_css$Css$batch(
+	_List_fromArray(
+		[
+			A2($rtfeldman$elm_css$Css$property, 'font-size', '1.5rem'),
+			A2($rtfeldman$elm_css$Css$property, 'line-height', '2rem')
+		]));
+var $author$project$Main$viewTitle = function (t) {
+	return A2(
+		$rtfeldman$elm_css$Html$Styled$div,
+		_List_fromArray(
+			[
+				$rtfeldman$elm_css$Html$Styled$Attributes$css(
+				_List_fromArray(
+					[$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$text_2xl, $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$font_bold]))
+			]),
+		$author$project$Util$htmlAddedBrFromString(t));
+};
+var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$gap_2 = A2($rtfeldman$elm_css$Css$property, 'gap', '0.5rem');
+var $author$project$Util$wrapInput = A2(
+	$rtfeldman$elm_css$Html$Styled$styled,
+	$rtfeldman$elm_css$Html$Styled$div,
+	_List_fromArray(
+		[$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$grid, $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$gap_2]));
+var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$z_20 = A2($rtfeldman$elm_css$Css$property, 'z-index', '20');
+var $author$project$Main$viewAddContent = A2(
+	$rtfeldman$elm_css$Html$Styled$div,
+	_List_fromArray(
+		[
+			$rtfeldman$elm_css$Html$Styled$Attributes$css(
+			_List_fromArray(
+				[$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$grid, $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$relative, $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$gap_12, $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$grid_flow_col]))
+		]),
+	_List_fromArray(
+		[
+			A2(
+			$rtfeldman$elm_css$Html$Styled$div,
+			_List_fromArray(
+				[
+					$rtfeldman$elm_css$Html$Styled$Attributes$css(
+					_List_fromArray(
+						[$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$relative, $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$p_10, $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$text_center, $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$z_20, $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$col_span_6]))
+				]),
+			_List_fromArray(
+				[
+					$author$project$Main$viewTitle('New Geo Point'),
+					A2(
+					$rtfeldman$elm_css$Html$Styled$div,
+					_List_fromArray(
+						[
+							$rtfeldman$elm_css$Html$Styled$Attributes$css(
+							_List_fromArray(
+								[$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$my_6]))
+						]),
+					$author$project$Util$htmlAddedBrFromString('Add geolocation coordinate on Concordium blockchain.')),
+					A2(
+					$rtfeldman$elm_css$Html$Styled$div,
+					_List_fromArray(
+						[
+							$rtfeldman$elm_css$Html$Styled$Attributes$css(
+							_List_fromArray(
+								[$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$grid, $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$gap_4, $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$grid_cols_1, $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$items_start]))
+						]),
+					_List_fromArray(
+						[
+							A2(
+							$author$project$Util$wrapInput,
+							_List_Nil,
+							_List_fromArray(
+								[
+									A2(
+									$author$project$Util$inputS,
+									_List_fromArray(
+										[
+											$rtfeldman$elm_css$Html$Styled$Attributes$type_('number'),
+											$rtfeldman$elm_css$Html$Styled$Attributes$name('lat'),
+											$rtfeldman$elm_css$Html$Styled$Attributes$step('any'),
+											$rtfeldman$elm_css$Html$Styled$Attributes$placeholder('Latitude'),
+											$rtfeldman$elm_css$Html$Styled$Events$onInput($author$project$Main$SetLatitude)
+										]),
+									_List_Nil)
+								])),
+							A2(
+							$author$project$Util$wrapInput,
+							_List_Nil,
+							_List_fromArray(
+								[
+									A2(
+									$author$project$Util$inputS,
+									_List_fromArray(
+										[
+											$rtfeldman$elm_css$Html$Styled$Attributes$type_('number'),
+											$rtfeldman$elm_css$Html$Styled$Attributes$name('lon'),
+											$rtfeldman$elm_css$Html$Styled$Attributes$step('any'),
+											$rtfeldman$elm_css$Html$Styled$Attributes$placeholder('Longitude'),
+											$rtfeldman$elm_css$Html$Styled$Events$onInput($author$project$Main$SetLongitude)
+										]),
+									_List_Nil)
+								])),
+							A2(
+							$author$project$Util$wrapInput,
+							_List_Nil,
+							_List_fromArray(
+								[
+									A2(
+									$author$project$Util$inputS,
+									_List_fromArray(
+										[
+											$rtfeldman$elm_css$Html$Styled$Attributes$type_('text'),
+											$rtfeldman$elm_css$Html$Styled$Attributes$name('lon'),
+											$rtfeldman$elm_css$Html$Styled$Attributes$placeholder('Label'),
+											$rtfeldman$elm_css$Html$Styled$Events$onInput($author$project$Main$SetLabel)
+										]),
+									_List_Nil)
+								]))
+						])),
+					A2(
+					$rtfeldman$elm_css$Html$Styled$div,
+					_List_fromArray(
+						[
+							$rtfeldman$elm_css$Html$Styled$Attributes$css(
+							_List_fromArray(
+								[
+									$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$mx_auto,
+									$rtfeldman$elm_css$Css$marginTop(
+									$rtfeldman$elm_css$Css$px(20))
+								]))
+						]),
+					_List_fromArray(
+						[
+							A2(
+							$author$project$Util$btnGreen,
+							_List_fromArray(
+								[
+									$rtfeldman$elm_css$Html$Styled$Events$onClick($author$project$Main$SubmitCoordinate)
+								]),
+							_List_fromArray(
+								[
+									$rtfeldman$elm_css$Html$Styled$text('Add')
+								]))
+						]))
+				])),
+			A2(
+			$rtfeldman$elm_css$Html$Styled$div,
+			_List_fromArray(
+				[
+					$rtfeldman$elm_css$Html$Styled$Attributes$css(
+					_List_fromArray(
+						[$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$col_span_1]))
+				]),
+			_List_fromArray(
+				[$author$project$Main$viewBack]))
+		]));
+var $author$project$Main$ShowWalletModal = {$: 'ShowWalletModal'};
+var $author$project$Main$Web3Connect = {$: 'Web3Connect'};
+var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$border_2 = A2($rtfeldman$elm_css$Css$property, 'border-width', '2px');
+var $author$project$Util$colorBrown = $rtfeldman$elm_css$Css$hex('#BBABAB');
+var $author$project$Util$colorGrayLight = $rtfeldman$elm_css$Css$hex('#F4F4F4');
+var $author$project$Util$btnGray = F2(
+	function (attr, h) {
+		return A2(
+			$author$project$Util$btn,
+			_Utils_ap(
+				_List_fromArray(
+					[
+						$rtfeldman$elm_css$Html$Styled$Attributes$css(
+						_List_fromArray(
+							[
+								$rtfeldman$elm_css$Css$backgroundColor($author$project$Util$colorGrayLight),
+								$rtfeldman$elm_css$Css$color(
+								$rtfeldman$elm_css$Css$hex('#494949')),
+								$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$border_2,
+								$rtfeldman$elm_css$Css$borderColor($author$project$Util$colorBrown)
+							]))
+					]),
+				attr),
+			h);
+	});
+var $rtfeldman$elm_css$Css$displayFlex = A2($rtfeldman$elm_css$Css$property, 'display', 'flex');
+var $rtfeldman$elm_css$Html$Styled$img = $rtfeldman$elm_css$Html$Styled$node('img');
+var $elm$core$String$endsWith = _String_endsWith;
+var $rtfeldman$elm_css$Css$makeImportant = function (str) {
+	return A2(
+		$elm$core$String$endsWith,
+		' !important',
+		$elm$core$String$toLower(str)) ? str : (str + ' !important');
+};
+var $rtfeldman$elm_css$Css$Preprocess$mapAllProperties = F2(
+	function (update, styles) {
+		if (!styles.b) {
+			return styles;
+		} else {
+			if (!styles.b.b) {
+				var only = styles.a;
+				return _List_fromArray(
+					[
+						A2($rtfeldman$elm_css$Css$Preprocess$mapProperties, update, only)
+					]);
+			} else {
+				var first = styles.a;
+				var rest = styles.b;
+				return A2(
+					$elm$core$List$cons,
+					first,
+					A2($rtfeldman$elm_css$Css$Preprocess$mapAllProperties, update, rest));
+			}
+		}
+	});
+var $rtfeldman$elm_css$Css$Preprocess$mapProperties = F2(
+	function (update, style) {
+		switch (style.$) {
+			case 'AppendProperty':
+				var property = style.a;
+				return $rtfeldman$elm_css$Css$Preprocess$AppendProperty(
+					update(property));
+			case 'ExtendSelector':
+				var selector = style.a;
+				var styles = style.b;
+				return A2(
+					$rtfeldman$elm_css$Css$Preprocess$ExtendSelector,
+					selector,
+					A2($rtfeldman$elm_css$Css$Preprocess$mapAllProperties, update, styles));
+			case 'NestSnippet':
+				return style;
+			case 'WithPseudoElement':
+				return style;
+			case 'WithMedia':
+				return style;
+			case 'WithKeyframes':
+				return style;
+			default:
+				var otherStyles = style.a;
+				return $rtfeldman$elm_css$Css$Preprocess$ApplyStyles(
+					A2(
+						$elm$core$List$map,
+						$rtfeldman$elm_css$Css$Preprocess$mapProperties(update),
+						otherStyles));
+		}
+	});
+var $rtfeldman$elm_css$Css$important = $rtfeldman$elm_css$Css$Preprocess$mapProperties($rtfeldman$elm_css$Css$makeImportant);
+var $rtfeldman$elm_css$Css$UnitlessInteger = {$: 'UnitlessInteger'};
+var $rtfeldman$elm_css$Css$int = function (val) {
+	return {
+		fontWeight: $rtfeldman$elm_css$Css$Structure$Compatible,
+		intOrAuto: $rtfeldman$elm_css$Css$Structure$Compatible,
+		lengthOrNumber: $rtfeldman$elm_css$Css$Structure$Compatible,
+		lengthOrNumberOrAutoOrNoneOrContent: $rtfeldman$elm_css$Css$Structure$Compatible,
+		number: $rtfeldman$elm_css$Css$Structure$Compatible,
+		numberOrInfinite: $rtfeldman$elm_css$Css$Structure$Compatible,
+		numericValue: val,
+		unitLabel: '',
+		units: $rtfeldman$elm_css$Css$UnitlessInteger,
+		value: $elm$core$String$fromInt(val)
+	};
+};
+var $rtfeldman$elm_css$Css$margin = $rtfeldman$elm_css$Css$prop1('margin');
+var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$right_8 = A2($rtfeldman$elm_css$Css$property, 'right', '2rem');
+var $rtfeldman$elm_css$Html$Styled$Attributes$src = function (url) {
+	return A2($rtfeldman$elm_css$Html$Styled$Attributes$stringProperty, 'src', url);
+};
+var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$top_8 = A2($rtfeldman$elm_css$Css$property, 'top', '2rem');
+var $rtfeldman$elm_css$Css$zIndex = $rtfeldman$elm_css$Css$prop1('z-index');
+var $author$project$Main$viewConnectPanel = function (model) {
+	return A2(
+		$rtfeldman$elm_css$Html$Styled$div,
+		_List_fromArray(
+			[
+				$rtfeldman$elm_css$Html$Styled$Attributes$css(
+				_List_fromArray(
+					[
+						$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$absolute,
+						$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$top_8,
+						$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$right_8,
+						$rtfeldman$elm_css$Css$zIndex(
+						$rtfeldman$elm_css$Css$int(100))
+					]))
+			]),
+		_List_fromArray(
+			[
+				A2(
+				$rtfeldman$elm_css$Html$Styled$div,
+				_List_fromArray(
+					[
+						$rtfeldman$elm_css$Html$Styled$Attributes$css(
+						_List_fromArray(
+							[
+								$rtfeldman$elm_css$Css$maxWidth(
+								$rtfeldman$elm_css$Css$px(235)),
+								$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$mx_auto,
+								$rtfeldman$elm_css$Css$height(
+								$rtfeldman$elm_css$Css$px(32))
+							]))
+					]),
+				_List_fromArray(
+					[
+						(!model.isWeb3Connected) ? A2(
+						$author$project$Util$btnGray,
+						_List_fromArray(
+							[
+								$rtfeldman$elm_css$Html$Styled$Attributes$css(
+								_List_fromArray(
+									[
+										$rtfeldman$elm_css$Css$height(
+										$rtfeldman$elm_css$Css$px(42)),
+										$rtfeldman$elm_css$Css$important(
+										$rtfeldman$elm_css$Css$lineHeight(
+											$rtfeldman$elm_css$Css$px(0))),
+										$rtfeldman$elm_css$Css$displayFlex,
+										$rtfeldman$elm_css$Css$alignItems($rtfeldman$elm_css$Css$center)
+									])),
+								$rtfeldman$elm_css$Html$Styled$Events$onClick($author$project$Main$Web3Connect)
+							]),
+						_List_fromArray(
+							[
+								A2(
+								$rtfeldman$elm_css$Html$Styled$img,
+								_List_fromArray(
+									[
+										$rtfeldman$elm_css$Html$Styled$Attributes$css(
+										_List_fromArray(
+											[
+												$rtfeldman$elm_css$Css$height(
+												$rtfeldman$elm_css$Css$px(22)),
+												$rtfeldman$elm_css$Css$width(
+												$rtfeldman$elm_css$Css$px(22)),
+												$rtfeldman$elm_css$Css$margin(
+												$rtfeldman$elm_css$Css$px(8))
+											])),
+										$rtfeldman$elm_css$Html$Styled$Attributes$src('src/assets/images/logo_256x256.svg')
+									]),
+								_List_Nil),
+								$rtfeldman$elm_css$Html$Styled$text('Connect')
+							])) : A2(
+						$author$project$Util$btnGreen,
+						_List_fromArray(
+							[
+								$rtfeldman$elm_css$Html$Styled$Attributes$css(
+								_List_fromArray(
+									[
+										$rtfeldman$elm_css$Css$height(
+										$rtfeldman$elm_css$Css$px(42)),
+										$rtfeldman$elm_css$Css$important(
+										$rtfeldman$elm_css$Css$lineHeight(
+											$rtfeldman$elm_css$Css$px(0))),
+										$rtfeldman$elm_css$Css$displayFlex,
+										$rtfeldman$elm_css$Css$alignItems($rtfeldman$elm_css$Css$center)
+									])),
+								$rtfeldman$elm_css$Html$Styled$Events$onClick($author$project$Main$ShowWalletModal)
+							]),
+						_List_fromArray(
+							[
+								A2(
+								$rtfeldman$elm_css$Html$Styled$img,
+								_List_fromArray(
+									[
+										$rtfeldman$elm_css$Html$Styled$Attributes$css(
+										_List_fromArray(
+											[
+												$rtfeldman$elm_css$Css$height(
+												$rtfeldman$elm_css$Css$px(22)),
+												$rtfeldman$elm_css$Css$width(
+												$rtfeldman$elm_css$Css$px(22)),
+												$rtfeldman$elm_css$Css$margin(
+												$rtfeldman$elm_css$Css$px(8))
+											])),
+										$rtfeldman$elm_css$Html$Styled$Attributes$src('src/assets/images/logo_white_256x256.svg')
+									]),
+								_List_Nil),
+								$rtfeldman$elm_css$Html$Styled$text(
+								A2($elm$core$String$left, 6, model.currAddress) + ('...' + A2($elm$core$String$right, 6, model.currAddress)))
+							]))
+					]))
+			]));
+};
+var $author$project$Main$Hover = function (a) {
+	return {$: 'Hover', a: a};
+};
+var $author$project$Main$MapClick = function (a) {
+	return {$: 'MapClick', a: a};
+};
+var $gampleman$elm_mapbox$Mapbox$Element$MapboxAttr = function (a) {
+	return {$: 'MapboxAttr', a: a};
+};
+var $elm$html$Html$Attributes$property = $elm$virtual_dom$VirtualDom$property;
+var $gampleman$elm_mapbox$Mapbox$Element$eventFeaturesLayers = A2(
+	$elm$core$Basics$composeR,
+	$elm$json$Json$Encode$list($elm$json$Json$Encode$string),
+	A2(
+		$elm$core$Basics$composeR,
+		$elm$html$Html$Attributes$property('eventFeaturesLayers'),
+		$gampleman$elm_mapbox$Mapbox$Element$MapboxAttr));
+var $gampleman$elm_mapbox$Mapbox$Element$featureState = A2(
+	$elm$core$Basics$composeR,
+	$elm$json$Json$Encode$list(
+		function (_v0) {
+			var feature = _v0.a;
+			var state = _v0.b;
+			return A2(
+				$elm$json$Json$Encode$list,
+				$elm$core$Basics$identity,
+				_List_fromArray(
+					[
+						feature,
+						$elm$json$Json$Encode$object(state)
+					]));
+		}),
+	A2(
+		$elm$core$Basics$composeR,
+		$elm$html$Html$Attributes$property('featureState'),
+		$gampleman$elm_mapbox$Mapbox$Element$MapboxAttr));
+var $author$project$Main$hoveredFeatures = A2(
+	$elm$core$Basics$composeR,
+	$elm$core$List$map(
+		function (feat) {
+			return _Utils_Tuple2(
+				feat,
+				_List_fromArray(
+					[
+						_Utils_Tuple2(
+						'hover',
+						$elm$json$Json$Encode$bool(true))
+					]));
+		}),
+	$gampleman$elm_mapbox$Mapbox$Element$featureState);
+var $elm$html$Html$Attributes$attribute = $elm$virtual_dom$VirtualDom$attribute;
+var $gampleman$elm_mapbox$Mapbox$Element$id = A2(
+	$elm$core$Basics$composeR,
+	$elm$html$Html$Attributes$attribute('id'),
+	$gampleman$elm_mapbox$Mapbox$Element$MapboxAttr);
+var $gampleman$elm_mapbox$Mapbox$Layer$encode = function (_v0) {
+	var value = _v0.a;
+	return value;
+};
+var $gampleman$elm_mapbox$Mapbox$Source$encode = function (_v0) {
+	var value = _v0.b;
+	return value;
+};
+var $gampleman$elm_mapbox$Mapbox$Expression$encode = function (_v0) {
+	var value = _v0.a;
+	return value;
+};
+var $gampleman$elm_mapbox$Mapbox$Style$encodeLight = function (_v0) {
+	var anchor = _v0.anchor;
+	var position = _v0.position;
+	var color = _v0.color;
+	var intensity = _v0.intensity;
+	return $elm$json$Json$Encode$object(
+		_List_fromArray(
+			[
+				_Utils_Tuple2(
+				'anchor',
+				$gampleman$elm_mapbox$Mapbox$Expression$encode(anchor)),
+				_Utils_Tuple2(
+				'position',
+				$gampleman$elm_mapbox$Mapbox$Expression$encode(position)),
+				_Utils_Tuple2(
+				'color',
+				$gampleman$elm_mapbox$Mapbox$Expression$encode(color)),
+				_Utils_Tuple2(
+				'intensity',
+				$gampleman$elm_mapbox$Mapbox$Expression$encode(intensity))
+			]));
+};
+var $elm$json$Json$Encode$int = _Json_wrap;
+var $gampleman$elm_mapbox$Mapbox$Style$encodeTransition = function (_v0) {
+	var duration = _v0.duration;
+	var delay = _v0.delay;
+	return $elm$json$Json$Encode$object(
+		_List_fromArray(
+			[
+				_Utils_Tuple2(
+				'duration',
+				$elm$json$Json$Encode$int(duration)),
+				_Utils_Tuple2(
+				'delay',
+				$elm$json$Json$Encode$int(delay))
+			]));
+};
+var $gampleman$elm_mapbox$Mapbox$Source$getId = function (_v0) {
+	var k = _v0.a;
+	return k;
+};
+var $gampleman$elm_mapbox$Mapbox$Style$encode = function (style) {
+	if (style.$ === 'Style') {
+		var styleDef = style.a;
+		return $elm$json$Json$Encode$object(
+			_Utils_ap(
+				_List_fromArray(
+					[
+						_Utils_Tuple2(
+						'version',
+						$elm$json$Json$Encode$int(8)),
+						_Utils_Tuple2(
+						'transition',
+						$gampleman$elm_mapbox$Mapbox$Style$encodeTransition(styleDef.transition)),
+						_Utils_Tuple2(
+						'light',
+						$gampleman$elm_mapbox$Mapbox$Style$encodeLight(styleDef.light)),
+						_Utils_Tuple2(
+						'sources',
+						$elm$json$Json$Encode$object(
+							A2(
+								$elm$core$List$map,
+								function (source) {
+									return _Utils_Tuple2(
+										$gampleman$elm_mapbox$Mapbox$Source$getId(source),
+										$gampleman$elm_mapbox$Mapbox$Source$encode(source));
+								},
+								styleDef.sources))),
+						_Utils_Tuple2(
+						'layers',
+						A2($elm$json$Json$Encode$list, $gampleman$elm_mapbox$Mapbox$Layer$encode, styleDef.layers))
+					]),
+				A2(
+					$elm$core$List$map,
+					function (_v1) {
+						var key = _v1.a;
+						var value = _v1.b;
+						return _Utils_Tuple2(key, value);
+					},
+					styleDef.misc)));
+	} else {
+		var s = style.a;
+		return $elm$json$Json$Encode$string(s);
+	}
+};
+var $gampleman$elm_mapbox$Mapbox$Element$map = F2(
+	function (attrs, style) {
+		var props = A2(
+			$elm$core$List$cons,
+			A2(
+				$elm$html$Html$Attributes$property,
+				'mapboxStyle',
+				$gampleman$elm_mapbox$Mapbox$Style$encode(style)),
+			A2(
+				$elm$core$List$map,
+				function (_v0) {
+					var attr = _v0.a;
+					return attr;
+				},
+				attrs));
+		return A3($elm$html$Html$node, 'elm-mapbox-map', props, _List_Nil);
+	});
+var $gampleman$elm_mapbox$Mapbox$Element$maxZoom = A2(
+	$elm$core$Basics$composeR,
+	$elm$json$Json$Encode$float,
+	A2(
+		$elm$core$Basics$composeR,
+		$elm$html$Html$Attributes$property('maxZoom'),
+		$gampleman$elm_mapbox$Mapbox$Element$MapboxAttr));
+var $gampleman$elm_mapbox$Mapbox$Element$EventData = F3(
+	function (point, lngLat, renderedFeatures) {
+		return {lngLat: lngLat, point: point, renderedFeatures: renderedFeatures};
+	});
+var $gampleman$elm_mapbox$LngLat$LngLat = F2(
+	function (lng, lat) {
+		return {lat: lat, lng: lng};
+	});
+var $gampleman$elm_mapbox$LngLat$decodeFromObject = A3(
+	$elm$json$Json$Decode$map2,
+	$gampleman$elm_mapbox$LngLat$LngLat,
+	A2($elm$json$Json$Decode$field, 'lng', $elm$json$Json$Decode$float),
+	A2($elm$json$Json$Decode$field, 'lat', $elm$json$Json$Decode$float));
+var $elm$core$Basics$round = _Basics_round;
+var $gampleman$elm_mapbox$Mapbox$Element$decodePoint = A3(
+	$elm$json$Json$Decode$map2,
+	F2(
+		function (a, b) {
+			return _Utils_Tuple2(
+				$elm$core$Basics$round(a),
+				$elm$core$Basics$round(b));
+		}),
+	A2($elm$json$Json$Decode$field, 'x', $elm$json$Json$Decode$float),
+	A2($elm$json$Json$Decode$field, 'y', $elm$json$Json$Decode$float));
+var $gampleman$elm_mapbox$Mapbox$Element$decodeEventData = A4(
+	$elm$json$Json$Decode$map3,
+	$gampleman$elm_mapbox$Mapbox$Element$EventData,
+	A2($elm$json$Json$Decode$field, 'point', $gampleman$elm_mapbox$Mapbox$Element$decodePoint),
+	A2($elm$json$Json$Decode$field, 'lngLat', $gampleman$elm_mapbox$LngLat$decodeFromObject),
+	A2(
+		$elm$json$Json$Decode$field,
+		'features',
+		$elm$json$Json$Decode$list($elm$json$Json$Decode$value)));
+var $gampleman$elm_mapbox$Mapbox$Element$onClick = function (tagger) {
+	return $gampleman$elm_mapbox$Mapbox$Element$MapboxAttr(
+		A2(
+			$elm$html$Html$Events$on,
+			'click',
+			A2($elm$json$Json$Decode$map, tagger, $gampleman$elm_mapbox$Mapbox$Element$decodeEventData)));
+};
+var $gampleman$elm_mapbox$Mapbox$Element$onMouseMove = function (tagger) {
+	return $gampleman$elm_mapbox$Mapbox$Element$MapboxAttr(
+		A2(
+			$elm$html$Html$Events$on,
+			'mousemove',
+			A2($elm$json$Json$Decode$map, tagger, $gampleman$elm_mapbox$Mapbox$Element$decodeEventData)));
+};
+var $gampleman$elm_mapbox$Mapbox$Expression$Exponential = function (a) {
+	return {$: 'Exponential', a: a};
+};
+var $gampleman$elm_mapbox$Mapbox$Style$Style = function (a) {
+	return {$: 'Style', a: a};
+};
+var $gampleman$elm_mapbox$Internal$Expression = function (a) {
+	return {$: 'Expression', a: a};
+};
+var $gampleman$elm_mapbox$Mapbox$Expression$call = F2(
+	function (name, args) {
+		return $gampleman$elm_mapbox$Internal$Expression(
+			A2(
+				$elm$json$Json$Encode$list,
+				$elm$core$Basics$identity,
+				A2(
+					$elm$core$List$cons,
+					$elm$json$Json$Encode$string(name),
+					args)));
+	});
+var $gampleman$elm_mapbox$Mapbox$Expression$calln = F2(
+	function (n, expressions) {
+		return A2(
+			$gampleman$elm_mapbox$Mapbox$Expression$call,
+			n,
+			A2($elm$core$List$map, $gampleman$elm_mapbox$Mapbox$Expression$encode, expressions));
+	});
+var $gampleman$elm_mapbox$Mapbox$Expression$all = $gampleman$elm_mapbox$Mapbox$Expression$calln('all');
+var $gampleman$elm_mapbox$Mapbox$Expression$call2 = F3(
+	function (n, _v0, _v1) {
+		var a = _v0.a;
+		var b = _v1.a;
+		return A2(
+			$gampleman$elm_mapbox$Mapbox$Expression$call,
+			n,
+			_List_fromArray(
+				[a, b]));
+	});
+var $gampleman$elm_mapbox$Mapbox$Expression$append = F2(
+	function (a, b) {
+		return A3($gampleman$elm_mapbox$Mapbox$Expression$call2, 'concat', b, a);
+	});
+var $gampleman$elm_mapbox$Mapbox$Layer$Layer = function (a) {
+	return {$: 'Layer', a: a};
+};
+var $gampleman$elm_mapbox$Mapbox$Layer$encodeAttrs = function (attrs) {
+	var _v0 = A3(
+		$elm$core$List$foldl,
+		F2(
+			function (attr, lists) {
+				switch (attr.$) {
+					case 'Top':
+						var key = attr.a;
+						var val = attr.b;
+						return _Utils_update(
+							lists,
+							{
+								top: A2(
+									$elm$core$List$cons,
+									_Utils_Tuple2(key, val),
+									lists.top)
+							});
+					case 'Paint':
+						var key = attr.a;
+						var val = attr.b;
+						return _Utils_update(
+							lists,
+							{
+								paint: A2(
+									$elm$core$List$cons,
+									_Utils_Tuple2(key, val),
+									lists.paint)
+							});
+					default:
+						var key = attr.a;
+						var val = attr.b;
+						return _Utils_update(
+							lists,
+							{
+								layout: A2(
+									$elm$core$List$cons,
+									_Utils_Tuple2(key, val),
+									lists.layout)
+							});
+				}
+			}),
+		{layout: _List_Nil, paint: _List_Nil, top: _List_Nil},
+		attrs);
+	var top = _v0.top;
+	var layout = _v0.layout;
+	var paint = _v0.paint;
+	return A2(
+		$elm$core$List$cons,
+		_Utils_Tuple2(
+			'layout',
+			$elm$json$Json$Encode$object(layout)),
+		A2(
+			$elm$core$List$cons,
+			_Utils_Tuple2(
+				'paint',
+				$elm$json$Json$Encode$object(paint)),
+			top));
+};
+var $gampleman$elm_mapbox$Mapbox$Layer$background = F2(
+	function (id, attrs) {
+		return $gampleman$elm_mapbox$Mapbox$Layer$Layer(
+			$elm$json$Json$Encode$object(
+				_Utils_ap(
+					_List_fromArray(
+						[
+							_Utils_Tuple2(
+							'type',
+							$elm$json$Json$Encode$string('background')),
+							_Utils_Tuple2(
+							'id',
+							$elm$json$Json$Encode$string(id))
+						]),
+					$gampleman$elm_mapbox$Mapbox$Layer$encodeAttrs(attrs))));
+	});
+var $gampleman$elm_mapbox$Mapbox$Layer$Paint = F2(
+	function (a, b) {
+		return {$: 'Paint', a: a, b: b};
+	});
+var $gampleman$elm_mapbox$Mapbox$Layer$backgroundColor = A2(
+	$elm$core$Basics$composeR,
+	$gampleman$elm_mapbox$Mapbox$Expression$encode,
+	$gampleman$elm_mapbox$Mapbox$Layer$Paint('background-color'));
+var $gampleman$elm_mapbox$Mapbox$Expression$bevel = $gampleman$elm_mapbox$Internal$Expression(
+	$elm$json$Json$Encode$string('bevel'));
+var $gampleman$elm_mapbox$Mapbox$Expression$bottom = $gampleman$elm_mapbox$Internal$Expression(
+	$elm$json$Json$Encode$string('bottom'));
+var $gampleman$elm_mapbox$Mapbox$Expression$butt = $gampleman$elm_mapbox$Internal$Expression(
+	$elm$json$Json$Encode$string('butt'));
+var $gampleman$elm_mapbox$Mapbox$Expression$center = $gampleman$elm_mapbox$Internal$Expression(
+	$elm$json$Json$Encode$string('center'));
+var $gampleman$elm_mapbox$Mapbox$Style$MiscAttr = F2(
+	function (a, b) {
+		return {$: 'MiscAttr', a: a, b: b};
+	});
+var $gampleman$elm_mapbox$Mapbox$Style$defaultCenter = A2(
+	$elm$core$Basics$composeR,
+	$gampleman$elm_mapbox$LngLat$encodeAsPair,
+	$gampleman$elm_mapbox$Mapbox$Style$MiscAttr('center'));
+var $gampleman$elm_mapbox$Mapbox$Expression$float = function (number) {
+	return $gampleman$elm_mapbox$Internal$Expression(
+		$elm$json$Json$Encode$float(number));
+};
+var $gampleman$elm_mapbox$Mapbox$Expression$call1 = F2(
+	function (n, _v0) {
+		var a = _v0.a;
+		return A2(
+			$gampleman$elm_mapbox$Mapbox$Expression$call,
+			n,
+			_List_fromArray(
+				[a]));
+	});
+var $gampleman$elm_mapbox$Mapbox$Expression$list = A2(
+	$elm$core$Basics$composeR,
+	$elm$json$Json$Encode$list($gampleman$elm_mapbox$Mapbox$Expression$encode),
+	A2(
+		$elm$core$Basics$composeR,
+		$gampleman$elm_mapbox$Internal$Expression,
+		$gampleman$elm_mapbox$Mapbox$Expression$call1('literal')));
+var $gampleman$elm_mapbox$Mapbox$Expression$floats = A2(
+	$elm$core$Basics$composeR,
+	$elm$core$List$map($gampleman$elm_mapbox$Mapbox$Expression$float),
+	$gampleman$elm_mapbox$Mapbox$Expression$list);
+var $gampleman$elm_mapbox$Mapbox$Expression$rgba = F4(
+	function (r, g, b, a) {
+		return $gampleman$elm_mapbox$Internal$Expression(
+			$elm$json$Json$Encode$string(
+				'rgba(' + ($elm$core$String$fromFloat(r) + (', ' + ($elm$core$String$fromFloat(g) + (', ' + ($elm$core$String$fromFloat(b) + (', ' + ($elm$core$String$fromFloat(a) + ')')))))))));
+	});
+var $gampleman$elm_mapbox$Mapbox$Expression$viewport = $gampleman$elm_mapbox$Internal$Expression(
+	$elm$json$Json$Encode$string('viewport'));
+var $gampleman$elm_mapbox$Mapbox$Style$defaultLight = {
+	anchor: $gampleman$elm_mapbox$Mapbox$Expression$viewport,
+	color: A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1),
+	intensity: $gampleman$elm_mapbox$Mapbox$Expression$float(0.5),
+	position: $gampleman$elm_mapbox$Mapbox$Expression$floats(
+		_List_fromArray(
+			[1.15, 210, 30]))
+};
+var $gampleman$elm_mapbox$Mapbox$Style$defaultTransition = {delay: 0, duration: 300};
+var $gampleman$elm_mapbox$Mapbox$Style$defaultZoomLevel = A2(
+	$elm$core$Basics$composeR,
+	$elm$json$Json$Encode$float,
+	$gampleman$elm_mapbox$Mapbox$Style$MiscAttr('zoom'));
+var $gampleman$elm_mapbox$Mapbox$Expression$bool = function (b) {
+	return $gampleman$elm_mapbox$Internal$Expression(
+		$elm$json$Json$Encode$bool(b));
+};
+var $gampleman$elm_mapbox$Mapbox$Expression$false = $gampleman$elm_mapbox$Mapbox$Expression$bool(false);
+var $gampleman$elm_mapbox$Mapbox$Layer$layerImpl = F4(
+	function (tipe, id, source, attrs) {
+		return $gampleman$elm_mapbox$Mapbox$Layer$Layer(
+			$elm$json$Json$Encode$object(
+				_Utils_ap(
+					_List_fromArray(
+						[
+							_Utils_Tuple2(
+							'type',
+							$elm$json$Json$Encode$string(tipe)),
+							_Utils_Tuple2(
+							'id',
+							$elm$json$Json$Encode$string(id)),
+							_Utils_Tuple2(
+							'source',
+							$elm$json$Json$Encode$string(source))
+						]),
+					$gampleman$elm_mapbox$Mapbox$Layer$encodeAttrs(attrs))));
+	});
+var $gampleman$elm_mapbox$Mapbox$Layer$fill = $gampleman$elm_mapbox$Mapbox$Layer$layerImpl('fill');
+var $gampleman$elm_mapbox$Mapbox$Layer$fillAntialias = A2(
+	$elm$core$Basics$composeR,
+	$gampleman$elm_mapbox$Mapbox$Expression$encode,
+	$gampleman$elm_mapbox$Mapbox$Layer$Paint('fill-antialias'));
+var $gampleman$elm_mapbox$Mapbox$Layer$fillColor = A2(
+	$elm$core$Basics$composeR,
+	$gampleman$elm_mapbox$Mapbox$Expression$encode,
+	$gampleman$elm_mapbox$Mapbox$Layer$Paint('fill-color'));
+var $gampleman$elm_mapbox$Mapbox$Layer$fillOpacity = A2(
+	$elm$core$Basics$composeR,
+	$gampleman$elm_mapbox$Mapbox$Expression$encode,
+	$gampleman$elm_mapbox$Mapbox$Layer$Paint('fill-opacity'));
+var $gampleman$elm_mapbox$Mapbox$Layer$fillOutlineColor = A2(
+	$elm$core$Basics$composeR,
+	$gampleman$elm_mapbox$Mapbox$Expression$encode,
+	$gampleman$elm_mapbox$Mapbox$Layer$Paint('fill-outline-color'));
+var $gampleman$elm_mapbox$Mapbox$Layer$fillPattern = A2(
+	$elm$core$Basics$composeR,
+	$gampleman$elm_mapbox$Mapbox$Expression$encode,
+	$gampleman$elm_mapbox$Mapbox$Layer$Paint('fill-pattern'));
+var $gampleman$elm_mapbox$Mapbox$Layer$fillTranslate = A2(
+	$elm$core$Basics$composeR,
+	$gampleman$elm_mapbox$Mapbox$Expression$encode,
+	$gampleman$elm_mapbox$Mapbox$Layer$Paint('fill-translate'));
+var $gampleman$elm_mapbox$Mapbox$Layer$fillTranslateAnchor = A2(
+	$elm$core$Basics$composeR,
+	$gampleman$elm_mapbox$Mapbox$Expression$encode,
+	$gampleman$elm_mapbox$Mapbox$Layer$Paint('fill-translate-anchor'));
+var $gampleman$elm_mapbox$Mapbox$Layer$Top = F2(
+	function (a, b) {
+		return {$: 'Top', a: a, b: b};
+	});
+var $gampleman$elm_mapbox$Mapbox$Layer$filter = A2(
+	$elm$core$Basics$composeR,
+	$gampleman$elm_mapbox$Mapbox$Expression$encode,
+	$gampleman$elm_mapbox$Mapbox$Layer$Top('filter'));
+var $gampleman$elm_mapbox$Mapbox$Source$Source = F2(
+	function (a, b) {
+		return {$: 'Source', a: a, b: b};
+	});
+var $gampleman$elm_mapbox$Mapbox$Source$geoJSONFromValue = F3(
+	function (id, options, data) {
+		return A2(
+			$gampleman$elm_mapbox$Mapbox$Source$Source,
+			id,
+			$elm$json$Json$Encode$object(
+				A2(
+					$elm$core$List$cons,
+					_Utils_Tuple2('data', data),
+					A2(
+						$elm$core$List$cons,
+						_Utils_Tuple2(
+							'type',
+							$elm$json$Json$Encode$string('geojson')),
+						A2(
+							$elm$core$List$map,
+							function (_v0) {
+								var k = _v0.a;
+								var v = _v0.b;
+								return _Utils_Tuple2(k, v);
+							},
+							options)))));
+	});
+var $elm$core$Result$withDefault = F2(
+	function (def, result) {
+		if (result.$ === 'Ok') {
+			var a = result.a;
+			return a;
+		} else {
+			return def;
+		}
+	});
+var $author$project$Styles$Outdoors$geojson = A2(
+	$elm$core$Result$withDefault,
+	$elm$json$Json$Encode$object(_List_Nil),
+	A2($elm$json$Json$Decode$decodeString, $elm$json$Json$Decode$value, '\n{\n  "type": "FeatureCollection",\n  "features": [\n    {\n      "type": "Feature",\n      "id": 1,\n      "properties": {\n        "name": "Bermuda Triangle",\n        "area": 1150180\n      },\n      "geometry": {\n        "type": "Polygon",\n        "coordinates": [\n          [\n            [-64.73, 32.31],\n            [-80.19, 25.76],\n            [-66.09, 18.43],\n            [-64.73, 32.31]\n          ]\n        ]\n      }\n    }\n  ]\n}\n'));
+var $gampleman$elm_mapbox$Mapbox$Expression$call0 = function (n) {
+	return A2($gampleman$elm_mapbox$Mapbox$Expression$call, n, _List_Nil);
+};
+var $gampleman$elm_mapbox$Mapbox$Expression$geometryType = $gampleman$elm_mapbox$Mapbox$Expression$call0('geometry-type');
+var $gampleman$elm_mapbox$Mapbox$Expression$getProperty = $gampleman$elm_mapbox$Mapbox$Expression$call1('get');
+var $gampleman$elm_mapbox$Mapbox$Style$glyphs = A2(
+	$elm$core$Basics$composeR,
+	$elm$json$Json$Encode$string,
+	$gampleman$elm_mapbox$Mapbox$Style$MiscAttr('glyphs'));
+var $gampleman$elm_mapbox$Mapbox$Expression$greaterThan = $gampleman$elm_mapbox$Mapbox$Expression$call2('>');
+var $gampleman$elm_mapbox$Mapbox$Expression$greaterThanOrEqual = $gampleman$elm_mapbox$Mapbox$Expression$call2('>=');
+var $gampleman$elm_mapbox$Mapbox$Layer$iconColor = A2(
+	$elm$core$Basics$composeR,
+	$gampleman$elm_mapbox$Mapbox$Expression$encode,
+	$gampleman$elm_mapbox$Mapbox$Layer$Paint('icon-color'));
+var $gampleman$elm_mapbox$Mapbox$Layer$iconHaloColor = A2(
+	$elm$core$Basics$composeR,
+	$gampleman$elm_mapbox$Mapbox$Expression$encode,
+	$gampleman$elm_mapbox$Mapbox$Layer$Paint('icon-halo-color'));
+var $gampleman$elm_mapbox$Mapbox$Layer$iconHaloWidth = A2(
+	$elm$core$Basics$composeR,
+	$gampleman$elm_mapbox$Mapbox$Expression$encode,
+	$gampleman$elm_mapbox$Mapbox$Layer$Paint('icon-halo-width'));
+var $gampleman$elm_mapbox$Mapbox$Layer$Layout = F2(
+	function (a, b) {
+		return {$: 'Layout', a: a, b: b};
+	});
+var $gampleman$elm_mapbox$Mapbox$Layer$iconImage = A2(
+	$elm$core$Basics$composeR,
+	$gampleman$elm_mapbox$Mapbox$Expression$encode,
+	$gampleman$elm_mapbox$Mapbox$Layer$Layout('icon-image'));
+var $gampleman$elm_mapbox$Mapbox$Layer$iconOpacity = A2(
+	$elm$core$Basics$composeR,
+	$gampleman$elm_mapbox$Mapbox$Expression$encode,
+	$gampleman$elm_mapbox$Mapbox$Layer$Paint('icon-opacity'));
+var $gampleman$elm_mapbox$Mapbox$Layer$iconPadding = A2(
+	$elm$core$Basics$composeR,
+	$gampleman$elm_mapbox$Mapbox$Expression$encode,
+	$gampleman$elm_mapbox$Mapbox$Layer$Layout('icon-padding'));
+var $gampleman$elm_mapbox$Mapbox$Layer$iconRotationAlignment = A2(
+	$elm$core$Basics$composeR,
+	$gampleman$elm_mapbox$Mapbox$Expression$encode,
+	$gampleman$elm_mapbox$Mapbox$Layer$Layout('icon-rotation-alignment'));
+var $gampleman$elm_mapbox$Mapbox$Expression$encodeInterpolation = function (interpolation) {
+	switch (interpolation.$) {
+		case 'Linear':
+			return $gampleman$elm_mapbox$Mapbox$Expression$call0('linear');
+		case 'Exponential':
+			var base = interpolation.a;
+			return A2(
+				$gampleman$elm_mapbox$Mapbox$Expression$call,
+				'exponential',
+				_List_fromArray(
+					[
+						$elm$json$Json$Encode$float(base)
+					]));
+		default:
+			var _v1 = interpolation.a;
+			var x1 = _v1.a;
+			var y1 = _v1.b;
+			var _v2 = interpolation.b;
+			var x2 = _v2.a;
+			var y2 = _v2.b;
+			return A2(
+				$gampleman$elm_mapbox$Mapbox$Expression$call,
+				'cubic-bezier',
+				_List_fromArray(
+					[
+						$elm$json$Json$Encode$float(x1),
+						$elm$json$Json$Encode$float(y1),
+						$elm$json$Json$Encode$float(x2),
+						$elm$json$Json$Encode$float(y2)
+					]));
+	}
+};
+var $gampleman$elm_mapbox$Mapbox$Expression$interpolate = F3(
+	function (interpolation, stops, _v0) {
+		var input = _v0.a;
+		return A2(
+			$gampleman$elm_mapbox$Mapbox$Expression$call,
+			'interpolate',
+			A2(
+				$elm$core$List$cons,
+				$gampleman$elm_mapbox$Mapbox$Expression$encode(
+					$gampleman$elm_mapbox$Mapbox$Expression$encodeInterpolation(interpolation)),
+				A2(
+					$elm$core$List$cons,
+					input,
+					A2(
+						$elm$core$List$concatMap,
+						function (_v1) {
+							var stop = _v1.a;
+							var res = _v1.b.a;
+							return _List_fromArray(
+								[
+									$elm$json$Json$Encode$float(stop),
+									res
+								]);
+						},
+						stops))));
+	});
+var $gampleman$elm_mapbox$Mapbox$Expression$isEqual = $gampleman$elm_mapbox$Mapbox$Expression$call2('==');
+var $gampleman$elm_mapbox$Mapbox$Expression$lessThan = $gampleman$elm_mapbox$Mapbox$Expression$call2('<');
+var $gampleman$elm_mapbox$Mapbox$Expression$lessThanOrEqual = $gampleman$elm_mapbox$Mapbox$Expression$call2('<=');
+var $gampleman$elm_mapbox$Mapbox$Expression$line = $gampleman$elm_mapbox$Internal$Expression(
+	$elm$json$Json$Encode$string('line'));
+var $gampleman$elm_mapbox$Mapbox$Layer$line = $gampleman$elm_mapbox$Mapbox$Layer$layerImpl('line');
+var $gampleman$elm_mapbox$Mapbox$Layer$lineBlur = A2(
+	$elm$core$Basics$composeR,
+	$gampleman$elm_mapbox$Mapbox$Expression$encode,
+	$gampleman$elm_mapbox$Mapbox$Layer$Paint('line-blur'));
+var $gampleman$elm_mapbox$Mapbox$Layer$lineCap = A2(
+	$elm$core$Basics$composeR,
+	$gampleman$elm_mapbox$Mapbox$Expression$encode,
+	$gampleman$elm_mapbox$Mapbox$Layer$Layout('line-cap'));
+var $gampleman$elm_mapbox$Mapbox$Layer$lineColor = A2(
+	$elm$core$Basics$composeR,
+	$gampleman$elm_mapbox$Mapbox$Expression$encode,
+	$gampleman$elm_mapbox$Mapbox$Layer$Paint('line-color'));
+var $gampleman$elm_mapbox$Mapbox$Layer$lineDasharray = A2(
+	$elm$core$Basics$composeR,
+	$gampleman$elm_mapbox$Mapbox$Expression$encode,
+	$gampleman$elm_mapbox$Mapbox$Layer$Paint('line-dasharray'));
+var $gampleman$elm_mapbox$Mapbox$Layer$lineGapWidth = A2(
+	$elm$core$Basics$composeR,
+	$gampleman$elm_mapbox$Mapbox$Expression$encode,
+	$gampleman$elm_mapbox$Mapbox$Layer$Paint('line-gap-width'));
+var $gampleman$elm_mapbox$Mapbox$Layer$lineJoin = A2(
+	$elm$core$Basics$composeR,
+	$gampleman$elm_mapbox$Mapbox$Expression$encode,
+	$gampleman$elm_mapbox$Mapbox$Layer$Layout('line-join'));
+var $gampleman$elm_mapbox$Mapbox$Layer$lineOffset = A2(
+	$elm$core$Basics$composeR,
+	$gampleman$elm_mapbox$Mapbox$Expression$encode,
+	$gampleman$elm_mapbox$Mapbox$Layer$Paint('line-offset'));
+var $gampleman$elm_mapbox$Mapbox$Layer$lineOpacity = A2(
+	$elm$core$Basics$composeR,
+	$gampleman$elm_mapbox$Mapbox$Expression$encode,
+	$gampleman$elm_mapbox$Mapbox$Layer$Paint('line-opacity'));
+var $gampleman$elm_mapbox$Mapbox$Layer$linePattern = A2(
+	$elm$core$Basics$composeR,
+	$gampleman$elm_mapbox$Mapbox$Expression$encode,
+	$gampleman$elm_mapbox$Mapbox$Layer$Paint('line-pattern'));
+var $gampleman$elm_mapbox$Mapbox$Layer$lineTranslate = A2(
+	$elm$core$Basics$composeR,
+	$gampleman$elm_mapbox$Mapbox$Expression$encode,
+	$gampleman$elm_mapbox$Mapbox$Layer$Paint('line-translate'));
+var $gampleman$elm_mapbox$Mapbox$Layer$lineTranslateAnchor = A2(
+	$elm$core$Basics$composeR,
+	$gampleman$elm_mapbox$Mapbox$Expression$encode,
+	$gampleman$elm_mapbox$Mapbox$Layer$Paint('line-translate-anchor'));
+var $gampleman$elm_mapbox$Mapbox$Layer$lineWidth = A2(
+	$elm$core$Basics$composeR,
+	$gampleman$elm_mapbox$Mapbox$Expression$encode,
+	$gampleman$elm_mapbox$Mapbox$Layer$Paint('line-width'));
+var $gampleman$elm_mapbox$Mapbox$Expression$map = $gampleman$elm_mapbox$Internal$Expression(
+	$elm$json$Json$Encode$string('map'));
+var $gampleman$elm_mapbox$Mapbox$Expression$matchesFloat = F3(
+	function (options, _v0, _v1) {
+		var _default = _v0.a;
+		var input = _v1.a;
+		var properOptions = A2(
+			$elm$core$List$concatMap,
+			function (_v2) {
+				var label = _v2.a;
+				var output = _v2.b.a;
+				return _List_fromArray(
+					[
+						$elm$json$Json$Encode$float(label),
+						output
+					]);
+			},
+			options);
+		return A2(
+			$gampleman$elm_mapbox$Mapbox$Expression$call,
+			'match',
+			A2(
+				$elm$core$List$cons,
+				input,
+				_Utils_ap(
+					properOptions,
+					_List_fromArray(
+						[_default]))));
+	});
+var $gampleman$elm_mapbox$Mapbox$Expression$matchesStr = F3(
+	function (options, _v0, _v1) {
+		var _default = _v0.a;
+		var input = _v1.a;
+		var properOptions = A2(
+			$elm$core$List$concatMap,
+			function (_v2) {
+				var label = _v2.a;
+				var output = _v2.b.a;
+				return _List_fromArray(
+					[
+						$elm$json$Json$Encode$string(label),
+						output
+					]);
+			},
+			options);
+		return A2(
+			$gampleman$elm_mapbox$Mapbox$Expression$call,
+			'match',
+			A2(
+				$elm$core$List$cons,
+				input,
+				_Utils_ap(
+					properOptions,
+					_List_fromArray(
+						[_default]))));
+	});
+var $gampleman$elm_mapbox$Mapbox$Layer$maxzoom = A2(
+	$elm$core$Basics$composeR,
+	$elm$json$Json$Encode$float,
+	$gampleman$elm_mapbox$Mapbox$Layer$Top('maxzoom'));
+var $gampleman$elm_mapbox$Mapbox$Layer$minzoom = A2(
+	$elm$core$Basics$composeR,
+	$elm$json$Json$Encode$float,
+	$gampleman$elm_mapbox$Mapbox$Layer$Top('minzoom'));
+var $gampleman$elm_mapbox$Mapbox$Expression$miter = $gampleman$elm_mapbox$Internal$Expression(
+	$elm$json$Json$Encode$string('miter'));
+var $gampleman$elm_mapbox$Mapbox$Style$name = A2(
+	$elm$core$Basics$composeR,
+	$elm$json$Json$Encode$string,
+	$gampleman$elm_mapbox$Mapbox$Style$MiscAttr('name'));
+var $gampleman$elm_mapbox$Mapbox$Expression$none = $gampleman$elm_mapbox$Internal$Expression(
+	$elm$json$Json$Encode$string('none'));
+var $gampleman$elm_mapbox$Mapbox$Expression$notEqual = $gampleman$elm_mapbox$Mapbox$Expression$call2('!=');
+var $gampleman$elm_mapbox$Mapbox$Expression$point = $gampleman$elm_mapbox$Internal$Expression(
+	$elm$json$Json$Encode$string('point'));
+var $gampleman$elm_mapbox$Mapbox$Expression$rounded = $gampleman$elm_mapbox$Internal$Expression(
+	$elm$json$Json$Encode$string('round'));
+var $gampleman$elm_mapbox$Mapbox$Layer$sourceLayer = A2(
+	$elm$core$Basics$composeR,
+	$elm$json$Json$Encode$string,
+	$gampleman$elm_mapbox$Mapbox$Layer$Top('source-layer'));
+var $gampleman$elm_mapbox$Mapbox$Style$sprite = A2(
+	$elm$core$Basics$composeR,
+	$elm$json$Json$Encode$string,
+	$gampleman$elm_mapbox$Mapbox$Style$MiscAttr('sprite'));
+var $gampleman$elm_mapbox$Mapbox$Expression$step = F3(
+	function (_v0, stops, _v1) {
+		var _default = _v0.a;
+		var input = _v1.a;
+		return A2(
+			$gampleman$elm_mapbox$Mapbox$Expression$call,
+			'step',
+			A2(
+				$elm$core$List$cons,
+				input,
+				A2(
+					$elm$core$List$cons,
+					_default,
+					A2(
+						$elm$core$List$concatMap,
+						function (_v2) {
+							var stop = _v2.a;
+							var res = _v2.b.a;
+							return _List_fromArray(
+								[
+									$elm$json$Json$Encode$float(stop),
+									res
+								]);
+						},
+						stops))));
+	});
+var $gampleman$elm_mapbox$Mapbox$Expression$str = function (s) {
+	return $gampleman$elm_mapbox$Internal$Expression(
+		$elm$json$Json$Encode$string(s));
+};
+var $gampleman$elm_mapbox$Mapbox$Expression$strings = A2(
+	$elm$core$Basics$composeR,
+	$elm$core$List$map($gampleman$elm_mapbox$Mapbox$Expression$str),
+	$gampleman$elm_mapbox$Mapbox$Expression$list);
+var $gampleman$elm_mapbox$Mapbox$Layer$symbol = $gampleman$elm_mapbox$Mapbox$Layer$layerImpl('symbol');
+var $gampleman$elm_mapbox$Mapbox$Layer$symbolPlacement = A2(
+	$elm$core$Basics$composeR,
+	$gampleman$elm_mapbox$Mapbox$Expression$encode,
+	$gampleman$elm_mapbox$Mapbox$Layer$Layout('symbol-placement'));
+var $gampleman$elm_mapbox$Mapbox$Layer$symbolSpacing = A2(
+	$elm$core$Basics$composeR,
+	$gampleman$elm_mapbox$Mapbox$Expression$encode,
+	$gampleman$elm_mapbox$Mapbox$Layer$Layout('symbol-spacing'));
+var $gampleman$elm_mapbox$Mapbox$Layer$textAnchor = A2(
+	$elm$core$Basics$composeR,
+	$gampleman$elm_mapbox$Mapbox$Expression$encode,
+	$gampleman$elm_mapbox$Mapbox$Layer$Layout('text-anchor'));
+var $gampleman$elm_mapbox$Mapbox$Layer$textColor = A2(
+	$elm$core$Basics$composeR,
+	$gampleman$elm_mapbox$Mapbox$Expression$encode,
+	$gampleman$elm_mapbox$Mapbox$Layer$Paint('text-color'));
+var $gampleman$elm_mapbox$Mapbox$Layer$textField = A2(
+	$elm$core$Basics$composeR,
+	$gampleman$elm_mapbox$Mapbox$Expression$encode,
+	$gampleman$elm_mapbox$Mapbox$Layer$Layout('text-field'));
+var $gampleman$elm_mapbox$Mapbox$Layer$textFont = A2(
+	$elm$core$Basics$composeR,
+	$gampleman$elm_mapbox$Mapbox$Expression$encode,
+	$gampleman$elm_mapbox$Mapbox$Layer$Layout('text-font'));
+var $gampleman$elm_mapbox$Mapbox$Layer$textHaloBlur = A2(
+	$elm$core$Basics$composeR,
+	$gampleman$elm_mapbox$Mapbox$Expression$encode,
+	$gampleman$elm_mapbox$Mapbox$Layer$Paint('text-halo-blur'));
+var $gampleman$elm_mapbox$Mapbox$Layer$textHaloColor = A2(
+	$elm$core$Basics$composeR,
+	$gampleman$elm_mapbox$Mapbox$Expression$encode,
+	$gampleman$elm_mapbox$Mapbox$Layer$Paint('text-halo-color'));
+var $gampleman$elm_mapbox$Mapbox$Layer$textHaloWidth = A2(
+	$elm$core$Basics$composeR,
+	$gampleman$elm_mapbox$Mapbox$Expression$encode,
+	$gampleman$elm_mapbox$Mapbox$Layer$Paint('text-halo-width'));
+var $gampleman$elm_mapbox$Mapbox$Layer$textLetterSpacing = A2(
+	$elm$core$Basics$composeR,
+	$gampleman$elm_mapbox$Mapbox$Expression$encode,
+	$gampleman$elm_mapbox$Mapbox$Layer$Layout('text-letter-spacing'));
+var $gampleman$elm_mapbox$Mapbox$Layer$textLineHeight = A2(
+	$elm$core$Basics$composeR,
+	$gampleman$elm_mapbox$Mapbox$Expression$encode,
+	$gampleman$elm_mapbox$Mapbox$Layer$Layout('text-line-height'));
+var $gampleman$elm_mapbox$Mapbox$Layer$textMaxAngle = A2(
+	$elm$core$Basics$composeR,
+	$gampleman$elm_mapbox$Mapbox$Expression$encode,
+	$gampleman$elm_mapbox$Mapbox$Layer$Layout('text-max-angle'));
+var $gampleman$elm_mapbox$Mapbox$Layer$textMaxWidth = A2(
+	$elm$core$Basics$composeR,
+	$gampleman$elm_mapbox$Mapbox$Expression$encode,
+	$gampleman$elm_mapbox$Mapbox$Layer$Layout('text-max-width'));
+var $gampleman$elm_mapbox$Mapbox$Layer$textOffset = A2(
+	$elm$core$Basics$composeR,
+	$gampleman$elm_mapbox$Mapbox$Expression$encode,
+	$gampleman$elm_mapbox$Mapbox$Layer$Layout('text-offset'));
+var $gampleman$elm_mapbox$Mapbox$Layer$textOpacity = A2(
+	$elm$core$Basics$composeR,
+	$gampleman$elm_mapbox$Mapbox$Expression$encode,
+	$gampleman$elm_mapbox$Mapbox$Layer$Paint('text-opacity'));
+var $gampleman$elm_mapbox$Mapbox$Layer$textPadding = A2(
+	$elm$core$Basics$composeR,
+	$gampleman$elm_mapbox$Mapbox$Expression$encode,
+	$gampleman$elm_mapbox$Mapbox$Layer$Layout('text-padding'));
+var $gampleman$elm_mapbox$Mapbox$Layer$textRotationAlignment = A2(
+	$elm$core$Basics$composeR,
+	$gampleman$elm_mapbox$Mapbox$Expression$encode,
+	$gampleman$elm_mapbox$Mapbox$Layer$Layout('text-rotation-alignment'));
+var $gampleman$elm_mapbox$Mapbox$Layer$textSize = A2(
+	$elm$core$Basics$composeR,
+	$gampleman$elm_mapbox$Mapbox$Expression$encode,
+	$gampleman$elm_mapbox$Mapbox$Layer$Layout('text-size'));
+var $gampleman$elm_mapbox$Mapbox$Layer$textTransform = A2(
+	$elm$core$Basics$composeR,
+	$gampleman$elm_mapbox$Mapbox$Expression$encode,
+	$gampleman$elm_mapbox$Mapbox$Layer$Layout('text-transform'));
+var $gampleman$elm_mapbox$Mapbox$Layer$textTranslate = A2(
+	$elm$core$Basics$composeR,
+	$gampleman$elm_mapbox$Mapbox$Expression$encode,
+	$gampleman$elm_mapbox$Mapbox$Layer$Paint('text-translate'));
+var $gampleman$elm_mapbox$Mapbox$Expression$toFormattedText = $gampleman$elm_mapbox$Mapbox$Expression$call1('to-string');
+var $gampleman$elm_mapbox$Mapbox$Expression$toString = $gampleman$elm_mapbox$Mapbox$Expression$call1('to-string');
+var $gampleman$elm_mapbox$Mapbox$Expression$top = $gampleman$elm_mapbox$Internal$Expression(
+	$elm$json$Json$Encode$string('top'));
+var $gampleman$elm_mapbox$Mapbox$Expression$true = $gampleman$elm_mapbox$Mapbox$Expression$bool(true);
+var $gampleman$elm_mapbox$Mapbox$Expression$uppercase = $gampleman$elm_mapbox$Internal$Expression(
+	$elm$json$Json$Encode$string('uppercase'));
+var $gampleman$elm_mapbox$Mapbox$Source$vectorFromUrl = F2(
+	function (id, url) {
+		return A2(
+			$gampleman$elm_mapbox$Mapbox$Source$Source,
+			id,
+			$elm$json$Json$Encode$object(
+				_List_fromArray(
+					[
+						_Utils_Tuple2(
+						'type',
+						$elm$json$Json$Encode$string('vector')),
+						_Utils_Tuple2(
+						'url',
+						$elm$json$Json$Encode$string(url))
+					])));
+	});
+var $gampleman$elm_mapbox$Mapbox$Expression$zoom = $gampleman$elm_mapbox$Mapbox$Expression$call0('zoom');
+var $author$project$Styles$Outdoors$style = $gampleman$elm_mapbox$Mapbox$Style$Style(
+	{
+		layers: _List_fromArray(
+			[
+				A2(
+				$gampleman$elm_mapbox$Mapbox$Layer$background,
+				'background',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$backgroundColor(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									11,
+									A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 239, 233, 224, 1)),
+									_Utils_Tuple2(
+									13,
+									A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 230, 227, 223, 1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$fill,
+				'landcover_crop',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('landcover'),
+						$gampleman$elm_mapbox$Mapbox$Layer$maxzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						A2(
+							$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+							$gampleman$elm_mapbox$Mapbox$Expression$str('crop'),
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('class')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 221, 236, 176, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									2,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.3)),
+									_Utils_Tuple2(
+									12,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillAntialias($gampleman$elm_mapbox$Mapbox$Expression$false)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$fill,
+				'landcover_grass',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('landcover'),
+						$gampleman$elm_mapbox$Mapbox$Layer$maxzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						A2(
+							$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+							$gampleman$elm_mapbox$Mapbox$Expression$str('grass'),
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('class')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 221, 236, 176, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									2,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.3)),
+									_Utils_Tuple2(
+									12,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillAntialias($gampleman$elm_mapbox$Mapbox$Expression$false)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$fill,
+				'landcover_scrub',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('landcover'),
+						$gampleman$elm_mapbox$Mapbox$Layer$maxzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						A2(
+							$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+							$gampleman$elm_mapbox$Mapbox$Expression$str('scrub'),
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('class')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 221, 236, 176, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									2,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.3)),
+									_Utils_Tuple2(
+									12,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillAntialias($gampleman$elm_mapbox$Mapbox$Expression$false)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$fill,
+				'landcover_wood',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('landcover'),
+						$gampleman$elm_mapbox$Mapbox$Layer$maxzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						A2(
+							$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+							$gampleman$elm_mapbox$Mapbox$Expression$str('wood'),
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('class')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 221, 236, 176, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									2,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.3)),
+									_Utils_Tuple2(
+									12,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillAntialias($gampleman$elm_mapbox$Mapbox$Expression$false)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$fill,
+				'landcover_snow',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('landcover'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						A2(
+							$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+							A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 250, 250, 1),
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('class')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillOpacity(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.2)),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillAntialias($gampleman$elm_mapbox$Mapbox$Expression$false)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$fill,
+				'national_park',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('landuse_overlay'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						A2(
+							$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+							$gampleman$elm_mapbox$Mapbox$Expression$str('national_park'),
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('class')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 181, 229, 157, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									5.5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75)),
+									_Utils_Tuple2(
+									9,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75)),
+									_Utils_Tuple2(
+									10,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.35))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$fill,
+				'scrub',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('landuse'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						A2(
+							$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+							$gampleman$elm_mapbox$Mapbox$Expression$str('scrub'),
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('class')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 202, 215, 161, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									9,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									15,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.2))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$fill,
+				'grass',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('landuse'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						A2(
+							$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+							$gampleman$elm_mapbox$Mapbox$Expression$str('grass'),
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('class')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 202, 215, 161, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									9,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									15,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.4))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$fill,
+				'wood',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('landuse'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						A2(
+							$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+							$gampleman$elm_mapbox$Mapbox$Expression$str('wood'),
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('class')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 202, 215, 161, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									7,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									15,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.5))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$fill,
+				'agriculture',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('landuse'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						A2(
+							$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+							$gampleman$elm_mapbox$Mapbox$Expression$str('agriculture'),
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('class')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									11,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 215, 224, 188, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillOutlineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 186, 199, 147, 1))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'national_park-tint-band',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('landuse_overlay'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						A2(
+							$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+							$gampleman$elm_mapbox$Mapbox$Expression$str('national_park'),
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('class')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 174, 229, 147, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.4),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									9,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(8))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOffset(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.4),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									9,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(-2.5))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									9,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									10,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineBlur(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(3)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'national_park-outline',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('landuse_overlay'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						A2(
+							$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+							$gampleman$elm_mapbox$Mapbox$Expression$str('national_park'),
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('class')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									12,
+									A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 168, 217, 144, 1)),
+									_Utils_Tuple2(
+									14,
+									A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 159, 204, 137, 1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									9,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75)),
+									_Utils_Tuple2(
+									12,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOffset(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									9,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									10,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$fill,
+				'hospital',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('landuse'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						A2(
+							$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+							$gampleman$elm_mapbox$Mapbox$Expression$str('hospital'),
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('class')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillColor(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									15.5,
+									A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 234, 209, 217, 1)),
+									_Utils_Tuple2(
+									16,
+									A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 244, 209, 221, 1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$fill,
+				'school',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('landuse'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						A2(
+							$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+							$gampleman$elm_mapbox$Mapbox$Expression$str('school'),
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('class')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillColor(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									15.5,
+									A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 229, 221, 183, 1)),
+									_Utils_Tuple2(
+									16,
+									A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 239, 231, 188, 1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$fill,
+				'park',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('landuse'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('park'),
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+									A3(
+									$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+									_List_fromArray(
+										[
+											_Utils_Tuple2('garden', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('golf_course', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('playground', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('zoo', $gampleman$elm_mapbox$Mapbox$Expression$false)
+										]),
+									$gampleman$elm_mapbox$Mapbox$Expression$true,
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('type')))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 181, 229, 157, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									6,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$fill,
+				'other-green-areas',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('landuse'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('park'),
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+									A3(
+									$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+									_List_fromArray(
+										[
+											_Utils_Tuple2('garden', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('golf_course', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('playground', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('zoo', $gampleman$elm_mapbox$Mapbox$Expression$true)
+										]),
+									$gampleman$elm_mapbox$Mapbox$Expression$false,
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('type')))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 197, 235, 177, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									6,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$fill,
+				'glacier',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('landuse'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						A2(
+							$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+							$gampleman$elm_mapbox$Mapbox$Expression$str('glacier'),
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('class')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 224, 243, 249, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									9,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									10,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.5))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$fill,
+				'pitch',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('landuse'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						A2(
+							$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+							$gampleman$elm_mapbox$Mapbox$Expression$str('pitch'),
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('class')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 170, 224, 142, 1))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'pitch-line',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('landuse'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						A2(
+							$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+							$gampleman$elm_mapbox$Mapbox$Expression$str('pitch'),
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('class')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 225, 237, 190, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$miter)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$fill,
+				'cemetery',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('landuse'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						A2(
+							$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+							$gampleman$elm_mapbox$Mapbox$Expression$str('cemetery'),
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('class')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 215, 224, 188, 1))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$fill,
+				'industrial',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('landuse'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						A2(
+							$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+							$gampleman$elm_mapbox$Mapbox$Expression$str('industrial'),
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('class')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillColor(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									15.5,
+									A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 213, 215, 224, 1)),
+									_Utils_Tuple2(
+									16,
+									A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 218, 221, 235, 1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$fill,
+				'sand',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('landuse'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						A2(
+							$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+							$gampleman$elm_mapbox$Mapbox$Expression$str('sand'),
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('class')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 237, 237, 206, 1))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'contour-line',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('contour'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$matchesFloat,
+							_List_fromArray(
+								[
+									_Utils_Tuple2(5, $gampleman$elm_mapbox$Mapbox$Expression$false),
+									_Utils_Tuple2(10, $gampleman$elm_mapbox$Mapbox$Expression$false)
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$true,
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('index')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									11,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.15)),
+									_Utils_Tuple2(
+									12,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.3))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 33, 102, 0, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									13,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+									_Utils_Tuple2(
+									16,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.8))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOffset(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									13,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+									_Utils_Tuple2(
+									16,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1.6))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'contour-line-index',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('contour'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$matchesFloat,
+							_List_fromArray(
+								[
+									_Utils_Tuple2(5, $gampleman$elm_mapbox$Mapbox$Expression$true),
+									_Utils_Tuple2(10, $gampleman$elm_mapbox$Mapbox$Expression$true)
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$false,
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('index')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									11,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.25)),
+									_Utils_Tuple2(
+									12,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.5))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 33, 102, 0, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									13,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.6)),
+									_Utils_Tuple2(
+									16,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1.2))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOffset(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									13,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.6)),
+									_Utils_Tuple2(
+									16,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1.2))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$fill,
+				'hillshade_highlight_bright',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('hillshade'),
+						$gampleman$elm_mapbox$Mapbox$Layer$maxzoom(18),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						A2(
+							$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+							$gampleman$elm_mapbox$Mapbox$Expression$float(94),
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('level')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									15,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.15)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillAntialias($gampleman$elm_mapbox$Mapbox$Expression$false)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$fill,
+				'hillshade_highlight_med',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('hillshade'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						A2(
+							$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+							$gampleman$elm_mapbox$Mapbox$Expression$float(90),
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('level')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									15,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.15)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillAntialias($gampleman$elm_mapbox$Mapbox$Expression$false)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$fill,
+				'hillshade_shadow_faint',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('hillshade'),
+						$gampleman$elm_mapbox$Mapbox$Layer$maxzoom(17),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						A2(
+							$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+							$gampleman$elm_mapbox$Mapbox$Expression$float(89),
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('level')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 89, 84, 23, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									15,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.07)),
+									_Utils_Tuple2(
+									17,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillAntialias($gampleman$elm_mapbox$Mapbox$Expression$false)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$fill,
+				'hillshade_shadow_med',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('hillshade'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						A2(
+							$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+							$gampleman$elm_mapbox$Mapbox$Expression$float(78),
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('level')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 89, 84, 23, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									15,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.07)),
+									_Utils_Tuple2(
+									17,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillAntialias($gampleman$elm_mapbox$Mapbox$Expression$false)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$fill,
+				'hillshade_shadow_dark',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('hillshade'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						A2(
+							$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+							$gampleman$elm_mapbox$Mapbox$Expression$float(67),
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('level')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 89, 84, 23, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									15,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.08)),
+									_Utils_Tuple2(
+									17,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillAntialias($gampleman$elm_mapbox$Mapbox$Expression$false)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$fill,
+				'hillshade_shadow_extreme',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('hillshade'),
+						$gampleman$elm_mapbox$Mapbox$Layer$maxzoom(17),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						A2(
+							$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+							$gampleman$elm_mapbox$Mapbox$Expression$float(56),
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('level')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 89, 84, 23, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									15,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.08)),
+									_Utils_Tuple2(
+									17,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillAntialias($gampleman$elm_mapbox$Mapbox$Expression$false)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'waterway-river-canal-shadow',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('waterway'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+							_List_fromArray(
+								[
+									_Utils_Tuple2('canal', $gampleman$elm_mapbox$Mapbox$Expression$true),
+									_Utils_Tuple2('river', $gampleman$elm_mapbox$Mapbox$Expression$true)
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$false,
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('class')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 109, 164, 242, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.3),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									8.5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.4)),
+									_Utils_Tuple2(
+									20,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(8))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									8,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									8.5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineTranslate(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.2),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									7,
+									$gampleman$elm_mapbox$Mapbox$Expression$floats(
+										_List_fromArray(
+											[0, 0]))),
+									_Utils_Tuple2(
+									16,
+									$gampleman$elm_mapbox$Mapbox$Expression$floats(
+										_List_fromArray(
+											[-1, -1])))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineTranslateAnchor($gampleman$elm_mapbox$Mapbox$Expression$viewport),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$step,
+							$gampleman$elm_mapbox$Mapbox$Expression$butt,
+							_List_fromArray(
+								[
+									_Utils_Tuple2(11, $gampleman$elm_mapbox$Mapbox$Expression$rounded)
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'waterway-river-canal',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('waterway'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+							_List_fromArray(
+								[
+									_Utils_Tuple2('canal', $gampleman$elm_mapbox$Mapbox$Expression$true),
+									_Utils_Tuple2('river', $gampleman$elm_mapbox$Mapbox$Expression$true)
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$false,
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('class')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 140, 202, 247, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.3),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									8.5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.4)),
+									_Utils_Tuple2(
+									20,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(8))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									8,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									8.5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$step,
+							$gampleman$elm_mapbox$Mapbox$Expression$butt,
+							_List_fromArray(
+								[
+									_Utils_Tuple2(11, $gampleman$elm_mapbox$Mapbox$Expression$rounded)
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'waterway-small',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('waterway'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+							_List_fromArray(
+								[
+									_Utils_Tuple2('canal', $gampleman$elm_mapbox$Mapbox$Expression$false),
+									_Utils_Tuple2('river', $gampleman$elm_mapbox$Mapbox$Expression$false)
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$true,
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('class')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 140, 202, 247, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.35),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									13.5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.4)),
+									_Utils_Tuple2(
+									20,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(3))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									13,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									13.5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$fill,
+				'water-shadow',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('water'),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 109, 164, 242, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillTranslate(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.2),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									7,
+									$gampleman$elm_mapbox$Mapbox$Expression$floats(
+										_List_fromArray(
+											[0, 0]))),
+									_Utils_Tuple2(
+									16,
+									$gampleman$elm_mapbox$Mapbox$Expression$floats(
+										_List_fromArray(
+											[-1, -1])))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillTranslateAnchor($gampleman$elm_mapbox$Mapbox$Expression$viewport),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillOpacity(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$fill,
+				'water',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('water'),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 117, 207, 239, 1))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$fill,
+				'wetlands',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('landuse_overlay'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+							_List_fromArray(
+								[
+									_Utils_Tuple2('wetland', $gampleman$elm_mapbox$Mapbox$Expression$true),
+									_Utils_Tuple2('wetland_noveg', $gampleman$elm_mapbox$Mapbox$Expression$true)
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$false,
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('class')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 160, 212, 217, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									10,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.25)),
+									_Utils_Tuple2(
+									10.5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.15))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$fill,
+				'wetlands-pattern',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('landuse_overlay'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+							_List_fromArray(
+								[
+									_Utils_Tuple2('wetland', $gampleman$elm_mapbox$Mapbox$Expression$true),
+									_Utils_Tuple2('wetland_noveg', $gampleman$elm_mapbox$Mapbox$Expression$true)
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$false,
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('class')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 160, 212, 217, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									10,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									10.5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillPattern(
+						$gampleman$elm_mapbox$Mapbox$Expression$str('wetland')),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillTranslateAnchor($gampleman$elm_mapbox$Mapbox$Expression$viewport)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$fill,
+				'barrier_line-land-polygon',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('barrier_line'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('Polygon'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('land'),
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('class')))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 230, 227, 223, 1))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'barrier_line-land-line',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('barrier_line'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('land'),
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('class')))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.99),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75)),
+									_Utils_Tuple2(
+									20,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(40))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 230, 227, 223, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$fill,
+				'aeroway-polygon',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('aeroway'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('Polygon'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$notEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('apron'),
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('type')))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillColor(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									15,
+									A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 198, 202, 219, 1)),
+									_Utils_Tuple2(
+									16,
+									A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 199, 204, 229, 1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									11,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									11.5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'aeroway-runway',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('aeroway'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('runway'),
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('type')))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									15,
+									A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 198, 202, 219, 1)),
+									_Utils_Tuple2(
+									16,
+									A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 199, 204, 229, 1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									9,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(80))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'aeroway-taxiway',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('aeroway'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('taxiway'),
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('type')))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									15,
+									A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 198, 202, 219, 1)),
+									_Utils_Tuple2(
+									16,
+									A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 199, 204, 229, 1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									10,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(20))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'building-line',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('building'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$notEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('building:part'),
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('type'))),
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('false'),
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('underground')))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 204, 201, 198, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									15,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75)),
+									_Utils_Tuple2(
+									20,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(3))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									15.5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									16,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$fill,
+				'building',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('building'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$notEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('building:part'),
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('type'))),
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('false'),
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('underground')))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillColor(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									15,
+									A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 227, 224, 221, 1)),
+									_Utils_Tuple2(
+									16,
+									A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 219, 217, 213, 1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									15.5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									16,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillOutlineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 204, 201, 198, 1))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'tunnel-street-low',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('street'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('tunnel'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									12.5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(18))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									11.5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									12,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+									_Utils_Tuple2(
+									14.01,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'tunnel-street_limited-low',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('street_limited'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('tunnel'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									12.5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(18))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									11.5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									12,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+									_Utils_Tuple2(
+									14.01,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'tunnel-track-case',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('track'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('tunnel'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									12,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75)),
+									_Utils_Tuple2(
+									20,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 204, 170, 0, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineGapWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									15,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(12))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineDasharray(
+						$gampleman$elm_mapbox$Mapbox$Expression$floats(
+							_List_fromArray(
+								[3, 3]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'tunnel-service-link-case',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(14),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('link', $gampleman$elm_mapbox$Mapbox$Expression$true),
+													_Utils_Tuple2('service', $gampleman$elm_mapbox$Mapbox$Expression$true)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$false,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('tunnel'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$notEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('trunk_link'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('type')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									12,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75)),
+									_Utils_Tuple2(
+									20,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 179, 183, 203, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineGapWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(12))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineDasharray(
+						$gampleman$elm_mapbox$Mapbox$Expression$floats(
+							_List_fromArray(
+								[3, 3]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'tunnel-street_limited-case',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('street_limited'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('tunnel'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									12,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75)),
+									_Utils_Tuple2(
+									20,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 179, 183, 203, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineGapWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									13,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(18))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineDasharray(
+						$gampleman$elm_mapbox$Mapbox$Expression$floats(
+							_List_fromArray(
+								[3, 3]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									13.99,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'tunnel-street-case',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('street'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('tunnel'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									12,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75)),
+									_Utils_Tuple2(
+									20,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 179, 183, 203, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineGapWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									13,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(18))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineDasharray(
+						$gampleman$elm_mapbox$Mapbox$Expression$floats(
+							_List_fromArray(
+								[3, 3]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									13.99,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'tunnel-secondary-tertiary-case',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('secondary', $gampleman$elm_mapbox$Mapbox$Expression$true),
+													_Utils_Tuple2('tertiary', $gampleman$elm_mapbox$Mapbox$Expression$true)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$false,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('tunnel'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.2),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									10,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineDasharray(
+						$gampleman$elm_mapbox$Mapbox$Expression$floats(
+							_List_fromArray(
+								[3, 3]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineGapWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									8.5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+									_Utils_Tuple2(
+									10,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(26))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 179, 183, 203, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'tunnel-primary-case',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('primary'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('tunnel'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75)),
+									_Utils_Tuple2(
+									16,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineDasharray(
+						$gampleman$elm_mapbox$Mapbox$Expression$floats(
+							_List_fromArray(
+								[3, 3]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineGapWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(32))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 179, 183, 203, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'tunnel-trunk_link-case',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('tunnel'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('trunk_link'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('type')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									12,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75)),
+									_Utils_Tuple2(
+									20,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineGapWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									12,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(18))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineDasharray(
+						$gampleman$elm_mapbox$Mapbox$Expression$floats(
+							_List_fromArray(
+								[3, 3]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'tunnel-motorway_link-case',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('motorway_link'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('tunnel'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									12,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75)),
+									_Utils_Tuple2(
+									20,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineGapWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									12,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(18))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineDasharray(
+						$gampleman$elm_mapbox$Mapbox$Expression$floats(
+							_List_fromArray(
+								[3, 3]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'tunnel-trunk-case',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('tunnel'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('trunk'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('type')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75)),
+									_Utils_Tuple2(
+									16,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineGapWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(32))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineDasharray(
+						$gampleman$elm_mapbox$Mapbox$Expression$floats(
+							_List_fromArray(
+								[3, 3]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'tunnel-motorway-case',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('motorway'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('tunnel'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75)),
+									_Utils_Tuple2(
+									16,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineGapWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(32))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineDasharray(
+						$gampleman$elm_mapbox$Mapbox$Expression$floats(
+							_List_fromArray(
+								[3, 3]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'tunnel-construction',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(14),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('construction'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('tunnel'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									12.5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(18))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 213, 216, 229, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									13.99,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineDasharray(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$step,
+							$gampleman$elm_mapbox$Mapbox$Expression$floats(
+								_List_fromArray(
+									[0.4, 0.8])),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									15,
+									$gampleman$elm_mapbox$Mapbox$Expression$floats(
+										_List_fromArray(
+											[0.3, 0.6]))),
+									_Utils_Tuple2(
+									16,
+									$gampleman$elm_mapbox$Mapbox$Expression$floats(
+										_List_fromArray(
+											[0.2, 0.3]))),
+									_Utils_Tuple2(
+									17,
+									$gampleman$elm_mapbox$Mapbox$Expression$floats(
+										_List_fromArray(
+											[0.2, 0.25]))),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$floats(
+										_List_fromArray(
+											[0.15, 0.15])))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$miter)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'tunnel-path',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('path'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('tunnel'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure'))),
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('cycleway', $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2('piste', $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2('steps', $gampleman$elm_mapbox$Mapbox$Expression$false)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$true,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('type')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									15,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(4))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineDasharray(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$step,
+							$gampleman$elm_mapbox$Mapbox$Expression$floats(
+								_List_fromArray(
+									[4, 0.4])),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									15,
+									$gampleman$elm_mapbox$Mapbox$Expression$floats(
+										_List_fromArray(
+											[3, 0.4]))),
+									_Utils_Tuple2(
+									16,
+									$gampleman$elm_mapbox$Mapbox$Expression$floats(
+										_List_fromArray(
+											[3, 0.35]))),
+									_Utils_Tuple2(
+									17,
+									$gampleman$elm_mapbox$Mapbox$Expression$floats(
+										_List_fromArray(
+											[3, 0.35])))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 245, 242, 238, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									13,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									13.25,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'tunnel-cycleway-piste',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('path'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('tunnel'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure'))),
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('cycleway', $gampleman$elm_mapbox$Mapbox$Expression$true),
+													_Utils_Tuple2('piste', $gampleman$elm_mapbox$Mapbox$Expression$true)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$false,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('type')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									15,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(4))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineDasharray(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$step,
+							$gampleman$elm_mapbox$Mapbox$Expression$floats(
+								_List_fromArray(
+									[4, 0.4])),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									15,
+									$gampleman$elm_mapbox$Mapbox$Expression$floats(
+										_List_fromArray(
+											[3, 0.4]))),
+									_Utils_Tuple2(
+									16,
+									$gampleman$elm_mapbox$Mapbox$Expression$floats(
+										_List_fromArray(
+											[3, 0.35]))),
+									_Utils_Tuple2(
+									17,
+									$gampleman$elm_mapbox$Mapbox$Expression$floats(
+										_List_fromArray(
+											[3, 0.35])))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 245, 242, 238, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									13,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									13.25,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'tunnel-steps',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('tunnel'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('steps'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('type')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									15,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+									_Utils_Tuple2(
+									16,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1.6)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(6))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 245, 242, 238, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineDasharray(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$step,
+							$gampleman$elm_mapbox$Mapbox$Expression$floats(
+								_List_fromArray(
+									[4, 0.4])),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									15,
+									$gampleman$elm_mapbox$Mapbox$Expression$floats(
+										_List_fromArray(
+											[1.75, 0.4]))),
+									_Utils_Tuple2(
+									16,
+									$gampleman$elm_mapbox$Mapbox$Expression$floats(
+										_List_fromArray(
+											[0.75, 0.4]))),
+									_Utils_Tuple2(
+									17,
+									$gampleman$elm_mapbox$Mapbox$Expression$floats(
+										_List_fromArray(
+											[0.3, 0.3])))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									13,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									13.25,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'tunnel-trunk_link',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('tunnel'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('trunk_link'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('type')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									12,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(18))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 242, 221, 155, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineDasharray(
+						$gampleman$elm_mapbox$Mapbox$Expression$floats(
+							_List_fromArray(
+								[1, 0]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'tunnel-motorway_link',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('motorway_link'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('tunnel'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									12,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(18))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 242, 201, 170, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineDasharray(
+						$gampleman$elm_mapbox$Mapbox$Expression$floats(
+							_List_fromArray(
+								[1, 0]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'tunnel-pedestrian',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('pedestrian'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('tunnel'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(12))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineDasharray(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$step,
+							$gampleman$elm_mapbox$Mapbox$Expression$floats(
+								_List_fromArray(
+									[1, 0])),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									15,
+									$gampleman$elm_mapbox$Mapbox$Expression$floats(
+										_List_fromArray(
+											[1.5, 0.4]))),
+									_Utils_Tuple2(
+									16,
+									$gampleman$elm_mapbox$Mapbox$Expression$floats(
+										_List_fromArray(
+											[1, 0.2])))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'tunnel-track',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('track'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('tunnel'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									15,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(12))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'tunnel-service-link',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(14),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('link', $gampleman$elm_mapbox$Mapbox$Expression$true),
+													_Utils_Tuple2('service', $gampleman$elm_mapbox$Mapbox$Expression$true)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$false,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('tunnel'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$notEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('trunk_link'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('type')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(12))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineDasharray(
+						$gampleman$elm_mapbox$Mapbox$Expression$floats(
+							_List_fromArray(
+								[1, 0]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'tunnel-street_limited',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('street_limited'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('tunnel'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									12.5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(18))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 239, 237, 234, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									13.99,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'tunnel-street',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('street'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('tunnel'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									12.5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(18))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									13.99,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'tunnel-secondary-tertiary',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('secondary', $gampleman$elm_mapbox$Mapbox$Expression$true),
+													_Utils_Tuple2('tertiary', $gampleman$elm_mapbox$Mapbox$Expression$true)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$false,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('tunnel'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									8.5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+									_Utils_Tuple2(
+									10,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(26))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineDasharray(
+						$gampleman$elm_mapbox$Mapbox$Expression$floats(
+							_List_fromArray(
+								[1, 0]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineBlur(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'tunnel-primary',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('primary'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('tunnel'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(32))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineDasharray(
+						$gampleman$elm_mapbox$Mapbox$Expression$floats(
+							_List_fromArray(
+								[1, 0]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineBlur(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$symbol,
+				'tunnel-oneway-arrows-blue-minor',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(16),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('link', $gampleman$elm_mapbox$Mapbox$Expression$true),
+													_Utils_Tuple2('path', $gampleman$elm_mapbox$Mapbox$Expression$true),
+													_Utils_Tuple2('pedestrian', $gampleman$elm_mapbox$Mapbox$Expression$true),
+													_Utils_Tuple2('service', $gampleman$elm_mapbox$Mapbox$Expression$true),
+													_Utils_Tuple2('track', $gampleman$elm_mapbox$Mapbox$Expression$true)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$false,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('true'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('oneway'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('tunnel'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$notEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('trunk_link'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('type')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$symbolPlacement($gampleman$elm_mapbox$Mapbox$Expression$line),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconImage(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$step,
+							$gampleman$elm_mapbox$Mapbox$Expression$str('oneway-small'),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('oneway-large'))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$symbolSpacing(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(200)),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconPadding(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(2))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$symbol,
+				'tunnel-oneway-arrows-blue-major',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('primary', $gampleman$elm_mapbox$Mapbox$Expression$true),
+													_Utils_Tuple2('secondary', $gampleman$elm_mapbox$Mapbox$Expression$true),
+													_Utils_Tuple2('street', $gampleman$elm_mapbox$Mapbox$Expression$true),
+													_Utils_Tuple2('street_limited', $gampleman$elm_mapbox$Mapbox$Expression$true),
+													_Utils_Tuple2('tertiary', $gampleman$elm_mapbox$Mapbox$Expression$true)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$false,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('true'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('oneway'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('tunnel'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$notEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('trunk_link'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('type')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$symbolPlacement($gampleman$elm_mapbox$Mapbox$Expression$line),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconImage(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$step,
+							$gampleman$elm_mapbox$Mapbox$Expression$str('oneway-small'),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									17,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('oneway-large'))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$symbolSpacing(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(200)),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconPadding(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(2))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'tunnel-trunk',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('trunk'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('tunnel'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(32))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 242, 221, 155, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'tunnel-motorway',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('motorway'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('tunnel'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(32))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineDasharray(
+						$gampleman$elm_mapbox$Mapbox$Expression$floats(
+							_List_fromArray(
+								[1, 0]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 242, 201, 170, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineBlur(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$symbol,
+				'tunnel-oneway-arrows-white',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(16),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('link', $gampleman$elm_mapbox$Mapbox$Expression$true),
+													_Utils_Tuple2('trunk', $gampleman$elm_mapbox$Mapbox$Expression$true)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$false,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('true'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('oneway'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('tunnel'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure'))),
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('primary_link', $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2('secondary_link', $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2('tertiary_link', $gampleman$elm_mapbox$Mapbox$Expression$false)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$true,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('type')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconOpacity(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+						$gampleman$elm_mapbox$Mapbox$Layer$symbolPlacement($gampleman$elm_mapbox$Mapbox$Expression$line),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconImage(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$step,
+							$gampleman$elm_mapbox$Mapbox$Expression$str('oneway-white-small'),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									17,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('oneway-white-large'))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$symbolSpacing(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(200)),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconPadding(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(2))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'cliffs',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('barrier_line'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						A2(
+							$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+							$gampleman$elm_mapbox$Mapbox$Expression$str('cliff'),
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('class')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									15,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									15.25,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(10)),
+						$gampleman$elm_mapbox$Mapbox$Layer$linePattern(
+						$gampleman$elm_mapbox$Mapbox$Expression$str('cliff')),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'ferry',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('ferry'),
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('type')))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									15,
+									A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 91, 172, 229, 1)),
+									_Utils_Tuple2(
+									17,
+									A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 91, 114, 229, 1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+									_Utils_Tuple2(
+									20,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineDasharray(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$step,
+							$gampleman$elm_mapbox$Mapbox$Expression$floats(
+								_List_fromArray(
+									[1, 0])),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									13,
+									$gampleman$elm_mapbox$Mapbox$Expression$floats(
+										_List_fromArray(
+											[12, 4])))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'ferry-auto',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('ferry_auto'),
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('type')))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									15,
+									A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 91, 172, 229, 1)),
+									_Utils_Tuple2(
+									17,
+									A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 91, 114, 229, 1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+									_Utils_Tuple2(
+									20,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'road-path-bg',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('path'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('bridge', $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2('tunnel', $gampleman$elm_mapbox$Mapbox$Expression$false)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$true,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure'))),
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('corridor', $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2('crossing', $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2('piste', $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2('sidewalk', $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2('steps', $gampleman$elm_mapbox$Mapbox$Expression$false)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$true,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('type')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									15,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2.5)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(8))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									13,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									13.25,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 204, 170, 0, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineBlur(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									17,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'road-piste-bg',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('path'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('bridge', $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2('tunnel', $gampleman$elm_mapbox$Mapbox$Expression$false)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$true,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('piste'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('type')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									15,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(7))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									13,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									13.25,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 99, 123, 242, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineBlur(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'road-sidewalk-corridor-bg',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(16),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('bridge', $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2('tunnel', $gampleman$elm_mapbox$Mapbox$Expression$false)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$true,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure'))),
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('corridor', $gampleman$elm_mapbox$Mapbox$Expression$true),
+													_Utils_Tuple2('crossing', $gampleman$elm_mapbox$Mapbox$Expression$true),
+													_Utils_Tuple2('sidewalk', $gampleman$elm_mapbox$Mapbox$Expression$true)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$false,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('type')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									15,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(7))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineDasharray(
+						$gampleman$elm_mapbox$Mapbox$Expression$floats(
+							_List_fromArray(
+								[1, 0]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 201, 203, 216, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineBlur(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									16,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									16.25,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.25))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'road-steps-bg',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('bridge', $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2('tunnel', $gampleman$elm_mapbox$Mapbox$Expression$false)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$true,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('steps'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('type')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									15,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2.5)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(8))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 204, 170, 0, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineBlur(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									17,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									13,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									13.25,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.25))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'road-pedestrian-case',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(12),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('pedestrian'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$none,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(14.5))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 213, 216, 229, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineGapWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									13.99,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'road-street-low',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('street'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$none,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									12.5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(18))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									11,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									11.25,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+									_Utils_Tuple2(
+									14.01,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'road-street_limited-low',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('street_limited'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$none,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									12.5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(18))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									11,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									11.25,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+									_Utils_Tuple2(
+									14.01,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'road-track-case',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('track'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('bridge', $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2('tunnel', $gampleman$elm_mapbox$Mapbox$Expression$false)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$true,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									12,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75)),
+									_Utils_Tuple2(
+									20,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 204, 170, 0, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineGapWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									15,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(12))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'road-service-link-case',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(14),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('link', $gampleman$elm_mapbox$Mapbox$Expression$true),
+													_Utils_Tuple2('service', $gampleman$elm_mapbox$Mapbox$Expression$true)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$false,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('bridge', $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2('tunnel', $gampleman$elm_mapbox$Mapbox$Expression$false)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$true,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$notEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('trunk_link'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('type')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									12,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75)),
+									_Utils_Tuple2(
+									20,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 213, 216, 229, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineGapWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(12))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'road-street_limited-case',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('street_limited'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$none,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									12,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75)),
+									_Utils_Tuple2(
+									20,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 213, 216, 229, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineGapWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									13,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(18))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									13.99,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'road-street-case',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('street'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$none,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									12,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75)),
+									_Utils_Tuple2(
+									20,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 213, 216, 229, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineGapWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									13,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(18))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									13.99,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'road-secondary-tertiary-case',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('secondary', $gampleman$elm_mapbox$Mapbox$Expression$true),
+													_Utils_Tuple2('tertiary', $gampleman$elm_mapbox$Mapbox$Expression$true)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$false,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('bridge', $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2('tunnel', $gampleman$elm_mapbox$Mapbox$Expression$false)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$true,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.2),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									10,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 213, 216, 229, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineGapWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									8.5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+									_Utils_Tuple2(
+									10,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(26))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									9.99,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									10,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'road-primary-case',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('primary'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('bridge', $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2('tunnel', $gampleman$elm_mapbox$Mapbox$Expression$false)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$true,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75)),
+									_Utils_Tuple2(
+									16,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 213, 216, 229, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineGapWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(32))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									9.99,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									10,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'road-motorway_link-case',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(10),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('motorway_link'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('bridge', $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2('tunnel', $gampleman$elm_mapbox$Mapbox$Expression$false)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$true,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									12,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75)),
+									_Utils_Tuple2(
+									20,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineGapWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									12,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(18))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									10.99,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									11,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'road-trunk_link-case',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('bridge', $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2('tunnel', $gampleman$elm_mapbox$Mapbox$Expression$false)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$true,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('trunk_link'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('type')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									12,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75)),
+									_Utils_Tuple2(
+									20,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineGapWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									12,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(18))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									10.99,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									11,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'road-trunk-case',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('trunk'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('bridge', $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2('tunnel', $gampleman$elm_mapbox$Mapbox$Expression$false)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$true,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									10,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+									_Utils_Tuple2(
+									16,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineGapWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(32))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									6,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									6.1,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'road-motorway-case',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('motorway'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('bridge', $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2('tunnel', $gampleman$elm_mapbox$Mapbox$Expression$false)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$true,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									10,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+									_Utils_Tuple2(
+									16,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineGapWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(32))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'road-construction',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(14),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('construction'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$none,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									12.5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(18))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 213, 216, 229, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									13.99,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineDasharray(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$step,
+							$gampleman$elm_mapbox$Mapbox$Expression$floats(
+								_List_fromArray(
+									[0.4, 0.8])),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									15,
+									$gampleman$elm_mapbox$Mapbox$Expression$floats(
+										_List_fromArray(
+											[0.3, 0.6]))),
+									_Utils_Tuple2(
+									16,
+									$gampleman$elm_mapbox$Mapbox$Expression$floats(
+										_List_fromArray(
+											[0.2, 0.3]))),
+									_Utils_Tuple2(
+									17,
+									$gampleman$elm_mapbox$Mapbox$Expression$floats(
+										_List_fromArray(
+											[0.2, 0.25]))),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$floats(
+										_List_fromArray(
+											[0.15, 0.15])))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$miter)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'road-sidewalk-corridor',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(16),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('bridge', $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2('tunnel', $gampleman$elm_mapbox$Mapbox$Expression$false)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$true,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure'))),
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('corridor', $gampleman$elm_mapbox$Mapbox$Expression$true),
+													_Utils_Tuple2('crossing', $gampleman$elm_mapbox$Mapbox$Expression$true),
+													_Utils_Tuple2('sidewalk', $gampleman$elm_mapbox$Mapbox$Expression$true)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$false,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('type')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									15,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(4))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineDasharray(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$step,
+							$gampleman$elm_mapbox$Mapbox$Expression$floats(
+								_List_fromArray(
+									[4, 0.4])),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									15,
+									$gampleman$elm_mapbox$Mapbox$Expression$floats(
+										_List_fromArray(
+											[3, 0.4]))),
+									_Utils_Tuple2(
+									16,
+									$gampleman$elm_mapbox$Mapbox$Expression$floats(
+										_List_fromArray(
+											[3, 0.35]))),
+									_Utils_Tuple2(
+									17,
+									$gampleman$elm_mapbox$Mapbox$Expression$floats(
+										_List_fromArray(
+											[3, 0.35])))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									16,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									16.25,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'road-path-smooth',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('path'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('bridge', $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2('tunnel', $gampleman$elm_mapbox$Mapbox$Expression$false)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$true,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure'))),
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('bridleway', $gampleman$elm_mapbox$Mapbox$Expression$true),
+													_Utils_Tuple2('footway', $gampleman$elm_mapbox$Mapbox$Expression$true),
+													_Utils_Tuple2('path', $gampleman$elm_mapbox$Mapbox$Expression$true)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$false,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('type')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									15,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(4))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineDasharray(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$step,
+							$gampleman$elm_mapbox$Mapbox$Expression$floats(
+								_List_fromArray(
+									[4, 0.4])),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									15,
+									$gampleman$elm_mapbox$Mapbox$Expression$floats(
+										_List_fromArray(
+											[3, 0.4]))),
+									_Utils_Tuple2(
+									16,
+									$gampleman$elm_mapbox$Mapbox$Expression$floats(
+										_List_fromArray(
+											[3, 0.35]))),
+									_Utils_Tuple2(
+									17,
+									$gampleman$elm_mapbox$Mapbox$Expression$floats(
+										_List_fromArray(
+											[3, 0.35])))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									13,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									13.25,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'road-path-rough',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('path'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('bridge', $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2('tunnel', $gampleman$elm_mapbox$Mapbox$Expression$false)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$true,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure'))),
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('hiking', $gampleman$elm_mapbox$Mapbox$Expression$true),
+													_Utils_Tuple2('mountain_bike', $gampleman$elm_mapbox$Mapbox$Expression$true),
+													_Utils_Tuple2('trail', $gampleman$elm_mapbox$Mapbox$Expression$true)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$false,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('type')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									15,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(4))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineDasharray(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$step,
+							$gampleman$elm_mapbox$Mapbox$Expression$floats(
+								_List_fromArray(
+									[4, 0.4])),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									15,
+									$gampleman$elm_mapbox$Mapbox$Expression$floats(
+										_List_fromArray(
+											[1.75, 0.4]))),
+									_Utils_Tuple2(
+									16,
+									$gampleman$elm_mapbox$Mapbox$Expression$floats(
+										_List_fromArray(
+											[1, 0.4]))),
+									_Utils_Tuple2(
+									17,
+									$gampleman$elm_mapbox$Mapbox$Expression$floats(
+										_List_fromArray(
+											[1, 0.35])))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									13,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									13.25,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'road-cycleway-piste',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('path'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('bridge', $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2('tunnel', $gampleman$elm_mapbox$Mapbox$Expression$false)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$true,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure'))),
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('cycleway', $gampleman$elm_mapbox$Mapbox$Expression$true),
+													_Utils_Tuple2('piste', $gampleman$elm_mapbox$Mapbox$Expression$true)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$false,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('type')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									15,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(4))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									13,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									13.25,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'road-steps',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('bridge', $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2('tunnel', $gampleman$elm_mapbox$Mapbox$Expression$false)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$true,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('steps'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('type')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									15,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+									_Utils_Tuple2(
+									16,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1.6)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(6))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineDasharray(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$step,
+							$gampleman$elm_mapbox$Mapbox$Expression$floats(
+								_List_fromArray(
+									[4, 0.4])),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									15,
+									$gampleman$elm_mapbox$Mapbox$Expression$floats(
+										_List_fromArray(
+											[1.75, 0.4]))),
+									_Utils_Tuple2(
+									16,
+									$gampleman$elm_mapbox$Mapbox$Expression$floats(
+										_List_fromArray(
+											[0.75, 0.4]))),
+									_Utils_Tuple2(
+									17,
+									$gampleman$elm_mapbox$Mapbox$Expression$floats(
+										_List_fromArray(
+											[0.3, 0.3])))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									13,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									13.25,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'road-trunk_link',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('bridge', $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2('tunnel', $gampleman$elm_mapbox$Mapbox$Expression$false)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$true,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('trunk_link'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('type')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									12,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(18))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 229, 203, 117, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'road-motorway_link',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(10),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('motorway_link'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('bridge', $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2('tunnel', $gampleman$elm_mapbox$Mapbox$Expression$false)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$true,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									12,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(18))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 229, 171, 127, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'road-pedestrian',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(12),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('pedestrian'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$none,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(12))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineDasharray(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$step,
+							$gampleman$elm_mapbox$Mapbox$Expression$floats(
+								_List_fromArray(
+									[1, 0])),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									15,
+									$gampleman$elm_mapbox$Mapbox$Expression$floats(
+										_List_fromArray(
+											[1.5, 0.4]))),
+									_Utils_Tuple2(
+									16,
+									$gampleman$elm_mapbox$Mapbox$Expression$floats(
+										_List_fromArray(
+											[1, 0.2])))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$fill,
+				'road-pedestrian-polygon-fill',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(12),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('Polygon'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('path', $gampleman$elm_mapbox$Mapbox$Expression$true),
+													_Utils_Tuple2('pedestrian', $gampleman$elm_mapbox$Mapbox$Expression$true)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$false,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$none,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillColor(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									16,
+									A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 237, 238, 242, 1)),
+									_Utils_Tuple2(
+									16.25,
+									A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 247, 248, 252, 1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillOutlineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 216, 219, 232, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillOpacity(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$fill,
+				'road-pedestrian-polygon-pattern',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(12),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('Polygon'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('path', $gampleman$elm_mapbox$Mapbox$Expression$true),
+													_Utils_Tuple2('pedestrian', $gampleman$elm_mapbox$Mapbox$Expression$true)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$false,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$none,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillOutlineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 215, 212, 207, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillPattern(
+						$gampleman$elm_mapbox$Mapbox$Expression$str('pedestrian-polygon')),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									16,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									16.25,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$fill,
+				'road-polygon',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(12),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('Polygon'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('motorway', $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2('path', $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2('pedestrian', $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2('trunk', $gampleman$elm_mapbox$Mapbox$Expression$false)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$true,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('bridge', $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2('tunnel', $gampleman$elm_mapbox$Mapbox$Expression$false)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$true,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$fillOutlineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 179, 183, 203, 1))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'road-track',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('track'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('bridge', $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2('tunnel', $gampleman$elm_mapbox$Mapbox$Expression$false)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$true,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									15,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(12))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'road-service-link',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(14),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('link', $gampleman$elm_mapbox$Mapbox$Expression$true),
+													_Utils_Tuple2('service', $gampleman$elm_mapbox$Mapbox$Expression$true)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$false,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('bridge', $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2('tunnel', $gampleman$elm_mapbox$Mapbox$Expression$false)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$true,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$notEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('trunk_link'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('type')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(12))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'road-street_limited',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('street_limited'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$none,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									12.5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(18))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 239, 237, 234, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									13.99,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'road-street',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('street'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$none,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									12.5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(18))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									13.99,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'road-secondary-tertiary',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('secondary', $gampleman$elm_mapbox$Mapbox$Expression$true),
+													_Utils_Tuple2('tertiary', $gampleman$elm_mapbox$Mapbox$Expression$true)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$false,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('bridge', $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2('tunnel', $gampleman$elm_mapbox$Mapbox$Expression$false)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$true,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									8.5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+									_Utils_Tuple2(
+									10,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(26))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									5,
+									A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 239, 233, 224, 1)),
+									_Utils_Tuple2(
+									8,
+									A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.2),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									5.5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'road-primary',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('primary'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('bridge', $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2('tunnel', $gampleman$elm_mapbox$Mapbox$Expression$false)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$true,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(32))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									5,
+									A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 239, 233, 224, 1)),
+									_Utils_Tuple2(
+									8,
+									A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.2),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									5.5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$symbol,
+				'road-oneway-arrows-blue-minor',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(16),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('link', $gampleman$elm_mapbox$Mapbox$Expression$true),
+													_Utils_Tuple2('path', $gampleman$elm_mapbox$Mapbox$Expression$true),
+													_Utils_Tuple2('pedestrian', $gampleman$elm_mapbox$Mapbox$Expression$true),
+													_Utils_Tuple2('service', $gampleman$elm_mapbox$Mapbox$Expression$true),
+													_Utils_Tuple2('track', $gampleman$elm_mapbox$Mapbox$Expression$true)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$false,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('true'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('oneway'))),
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('bridge', $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2('tunnel', $gampleman$elm_mapbox$Mapbox$Expression$false)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$true,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$notEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('trunk_link'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('type')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$symbolPlacement($gampleman$elm_mapbox$Mapbox$Expression$line),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconImage(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$step,
+							$gampleman$elm_mapbox$Mapbox$Expression$str('oneway-small'),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('oneway-large'))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconRotationAlignment($gampleman$elm_mapbox$Mapbox$Expression$map),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconPadding(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(2)),
+						$gampleman$elm_mapbox$Mapbox$Layer$symbolSpacing(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(200))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$symbol,
+				'road-oneway-arrows-blue-major',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('primary', $gampleman$elm_mapbox$Mapbox$Expression$true),
+													_Utils_Tuple2('secondary', $gampleman$elm_mapbox$Mapbox$Expression$true),
+													_Utils_Tuple2('street', $gampleman$elm_mapbox$Mapbox$Expression$true),
+													_Utils_Tuple2('street_limited', $gampleman$elm_mapbox$Mapbox$Expression$true),
+													_Utils_Tuple2('tertiary', $gampleman$elm_mapbox$Mapbox$Expression$true)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$false,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('true'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('oneway'))),
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('bridge', $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2('tunnel', $gampleman$elm_mapbox$Mapbox$Expression$false)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$true,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$notEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('trunk_link'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('type')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$symbolPlacement($gampleman$elm_mapbox$Mapbox$Expression$line),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconImage(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$step,
+							$gampleman$elm_mapbox$Mapbox$Expression$str('oneway-small'),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									17,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('oneway-large'))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconRotationAlignment($gampleman$elm_mapbox$Mapbox$Expression$map),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconPadding(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(2)),
+						$gampleman$elm_mapbox$Mapbox$Layer$symbolSpacing(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(200))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'road-trunk',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('trunk'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('bridge', $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2('tunnel', $gampleman$elm_mapbox$Mapbox$Expression$false)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$true,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(32))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									6,
+									A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+									_Utils_Tuple2(
+									6.1,
+									A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 234, 196, 71, 1)),
+									_Utils_Tuple2(
+									9,
+									A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 229, 203, 117, 1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'road-motorway',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('motorway'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('bridge', $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2('tunnel', $gampleman$elm_mapbox$Mapbox$Expression$false)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$true,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(32))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									8,
+									A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 242, 146, 73, 1)),
+									_Utils_Tuple2(
+									9,
+									A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 229, 171, 127, 1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'road-rail',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('major_rail', $gampleman$elm_mapbox$Mapbox$Expression$true),
+													_Utils_Tuple2('minor_rail', $gampleman$elm_mapbox$Mapbox$Expression$true)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$false,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('bridge', $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2('tunnel', $gampleman$elm_mapbox$Mapbox$Expression$false)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$true,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									13,
+									A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 216, 214, 201, 1)),
+									_Utils_Tuple2(
+									16,
+									A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 182, 184, 195, 1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+									_Utils_Tuple2(
+									20,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'road-rail-tracks',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('major_rail', $gampleman$elm_mapbox$Mapbox$Expression$true),
+													_Utils_Tuple2('minor_rail', $gampleman$elm_mapbox$Mapbox$Expression$true)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$false,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('bridge', $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2('tunnel', $gampleman$elm_mapbox$Mapbox$Expression$false)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$true,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									13,
+									A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 216, 214, 201, 1)),
+									_Utils_Tuple2(
+									16,
+									A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 182, 184, 195, 1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(4)),
+									_Utils_Tuple2(
+									20,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(8))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineDasharray(
+						$gampleman$elm_mapbox$Mapbox$Expression$floats(
+							_List_fromArray(
+								[0.1, 15]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									13.75,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$symbol,
+				'road-oneway-arrows-white',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(16),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('link', $gampleman$elm_mapbox$Mapbox$Expression$true),
+													_Utils_Tuple2('trunk', $gampleman$elm_mapbox$Mapbox$Expression$true)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$false,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('true'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('oneway'))),
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('bridge', $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2('tunnel', $gampleman$elm_mapbox$Mapbox$Expression$false)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$true,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure'))),
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('primary_link', $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2('secondary_link', $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2('tertiary_link', $gampleman$elm_mapbox$Mapbox$Expression$false)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$true,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('type')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconOpacity(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+						$gampleman$elm_mapbox$Mapbox$Layer$symbolPlacement($gampleman$elm_mapbox$Mapbox$Expression$line),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconImage(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$step,
+							$gampleman$elm_mapbox$Mapbox$Expression$str('oneway-white-small'),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									17,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('oneway-white-large'))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconPadding(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(2)),
+						$gampleman$elm_mapbox$Mapbox$Layer$symbolSpacing(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(200))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'hedges',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('barrier_line'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(16),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						A2(
+							$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+							$gampleman$elm_mapbox$Mapbox$Expression$str('hedge'),
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('class')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 163, 223, 133, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									16,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+									_Utils_Tuple2(
+									20,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(3))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineDasharray(
+						$gampleman$elm_mapbox$Mapbox$Expression$floats(
+							_List_fromArray(
+								[1, 2, 5, 2, 1, 2]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'fences',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('barrier_line'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(16),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						A2(
+							$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+							$gampleman$elm_mapbox$Mapbox$Expression$str('fence'),
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('class')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 204, 199, 183, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									16,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+									_Utils_Tuple2(
+									20,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(3))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineDasharray(
+						$gampleman$elm_mapbox$Mapbox$Expression$floats(
+							_List_fromArray(
+								[1, 2, 5, 2, 1, 2]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'gates',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('barrier_line'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(17),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						A2(
+							$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+							$gampleman$elm_mapbox$Mapbox$Expression$str('gate'),
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('class')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 204, 199, 183, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									16,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+									_Utils_Tuple2(
+									20,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(3))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineDasharray(
+						$gampleman$elm_mapbox$Mapbox$Expression$floats(
+							_List_fromArray(
+								[1, 2, 5, 2, 1, 2]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'bridge-path-bg',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('path'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('bridge'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure'))),
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('piste', $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2('steps', $gampleman$elm_mapbox$Mapbox$Expression$false)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$true,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('type')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									15,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2.5)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(8))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									13,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									13.25,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 204, 170, 0, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineBlur(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									17,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'bridge-piste-bg',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('path'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('bridge'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('piste'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('type')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									15,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(7))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineDasharray(
+						$gampleman$elm_mapbox$Mapbox$Expression$floats(
+							_List_fromArray(
+								[1, 0]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 88, 163, 217, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineBlur(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									13,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									13.25,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'bridge-steps-bg',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('bridge'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('steps'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('type')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									15,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2.5)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(8))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 204, 170, 0, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									13,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									13.25,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineBlur(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									17,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'bridge-pedestrian-case',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('pedestrian'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('bridge'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(14.5))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 213, 216, 229, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineGapWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									13.99,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'bridge-street-low',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('street'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('bridge'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									12.5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(18))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									11.5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									12,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+									_Utils_Tuple2(
+									14.01,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'bridge-street_limited-low',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('street_limited'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('bridge'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									12.5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(18))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									11.5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									12,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+									_Utils_Tuple2(
+									14.01,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'bridge-track-case',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('track'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('bridge'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									12,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75)),
+									_Utils_Tuple2(
+									20,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 204, 170, 0, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineGapWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									15,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(12))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'bridge-service-link-case',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(14),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('link', $gampleman$elm_mapbox$Mapbox$Expression$true),
+													_Utils_Tuple2('service', $gampleman$elm_mapbox$Mapbox$Expression$true)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$false,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('bridge'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$notEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('trunk_link'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('type')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									12,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75)),
+									_Utils_Tuple2(
+									20,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 213, 216, 229, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineGapWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(12))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'bridge-street_limited-case',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('street_limited'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('bridge'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									12,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75)),
+									_Utils_Tuple2(
+									20,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 213, 216, 229, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineGapWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									13,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(18))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'bridge-street-case',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('street'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('bridge'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									12,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75)),
+									_Utils_Tuple2(
+									20,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 213, 216, 229, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									13.99,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineGapWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									13,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(18))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'bridge-secondary-tertiary-case',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('secondary', $gampleman$elm_mapbox$Mapbox$Expression$true),
+													_Utils_Tuple2('tertiary', $gampleman$elm_mapbox$Mapbox$Expression$true)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$false,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('bridge'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.2),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									10,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 213, 216, 229, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineGapWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									8.5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+									_Utils_Tuple2(
+									10,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(26))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineTranslate(
+						$gampleman$elm_mapbox$Mapbox$Expression$floats(
+							_List_fromArray(
+								[0, 0]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'bridge-primary-case',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('primary'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('bridge'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75)),
+									_Utils_Tuple2(
+									16,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 213, 216, 229, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineGapWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(32))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineTranslate(
+						$gampleman$elm_mapbox$Mapbox$Expression$floats(
+							_List_fromArray(
+								[0, 0]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'bridge-trunk_link-case',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesFloat,
+											_List_fromArray(
+												[
+													_Utils_Tuple2(2, $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2(3, $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2(4, $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2(5, $gampleman$elm_mapbox$Mapbox$Expression$false)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$true,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('layer'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('bridge'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('trunk_link'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('type')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									12,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75)),
+									_Utils_Tuple2(
+									20,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineGapWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									12,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(18))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									10.99,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									11,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'bridge-motorway_link-case',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('motorway_link'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesFloat,
+											_List_fromArray(
+												[
+													_Utils_Tuple2(2, $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2(3, $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2(4, $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2(5, $gampleman$elm_mapbox$Mapbox$Expression$false)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$true,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('layer'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('bridge'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									12,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75)),
+									_Utils_Tuple2(
+									20,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineGapWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									12,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(18))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'bridge-trunk-case',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('trunk'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesFloat,
+											_List_fromArray(
+												[
+													_Utils_Tuple2(2, $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2(3, $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2(4, $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2(5, $gampleman$elm_mapbox$Mapbox$Expression$false)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$true,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('layer'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('bridge'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75)),
+									_Utils_Tuple2(
+									16,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineGapWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(32))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'bridge-motorway-case',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('motorway'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesFloat,
+											_List_fromArray(
+												[
+													_Utils_Tuple2(2, $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2(3, $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2(4, $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2(5, $gampleman$elm_mapbox$Mapbox$Expression$false)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$true,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('layer'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('bridge'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75)),
+									_Utils_Tuple2(
+									16,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineGapWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(32))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'bridge-construction',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(14),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('construction'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('bridge'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									12.5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(18))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 213, 216, 229, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									13.99,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineDasharray(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$step,
+							$gampleman$elm_mapbox$Mapbox$Expression$floats(
+								_List_fromArray(
+									[0.4, 0.8])),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									15,
+									$gampleman$elm_mapbox$Mapbox$Expression$floats(
+										_List_fromArray(
+											[0.3, 0.6]))),
+									_Utils_Tuple2(
+									16,
+									$gampleman$elm_mapbox$Mapbox$Expression$floats(
+										_List_fromArray(
+											[0.2, 0.3]))),
+									_Utils_Tuple2(
+									17,
+									$gampleman$elm_mapbox$Mapbox$Expression$floats(
+										_List_fromArray(
+											[0.2, 0.25]))),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$floats(
+										_List_fromArray(
+											[0.15, 0.15])))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$miter)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'bridge-path',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('path'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('bridge'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure'))),
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('cycleway', $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2('piste', $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2('steps', $gampleman$elm_mapbox$Mapbox$Expression$false)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$true,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('type')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									15,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(4))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineDasharray(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$step,
+							$gampleman$elm_mapbox$Mapbox$Expression$floats(
+								_List_fromArray(
+									[4, 0.4])),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									15,
+									$gampleman$elm_mapbox$Mapbox$Expression$floats(
+										_List_fromArray(
+											[3, 0.4]))),
+									_Utils_Tuple2(
+									16,
+									$gampleman$elm_mapbox$Mapbox$Expression$floats(
+										_List_fromArray(
+											[3, 0.35]))),
+									_Utils_Tuple2(
+									17,
+									$gampleman$elm_mapbox$Mapbox$Expression$floats(
+										_List_fromArray(
+											[3, 0.35])))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									13,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									13.25,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'bridge-cycleway-piste',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('path'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('bridge'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure'))),
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('cycleway', $gampleman$elm_mapbox$Mapbox$Expression$true),
+													_Utils_Tuple2('piste', $gampleman$elm_mapbox$Mapbox$Expression$true)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$false,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('type')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									15,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(4))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									13,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									13.25,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'bridge-steps',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('bridge'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('steps'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('type')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									15,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+									_Utils_Tuple2(
+									16,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1.6)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(6))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineDasharray(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$step,
+							$gampleman$elm_mapbox$Mapbox$Expression$floats(
+								_List_fromArray(
+									[4, 0.4])),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									15,
+									$gampleman$elm_mapbox$Mapbox$Expression$floats(
+										_List_fromArray(
+											[1.75, 0.4]))),
+									_Utils_Tuple2(
+									16,
+									$gampleman$elm_mapbox$Mapbox$Expression$floats(
+										_List_fromArray(
+											[0.75, 0.4]))),
+									_Utils_Tuple2(
+									17,
+									$gampleman$elm_mapbox$Mapbox$Expression$floats(
+										_List_fromArray(
+											[0.3, 0.3])))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									13,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									13.25,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'bridge-trunk_link',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesFloat,
+											_List_fromArray(
+												[
+													_Utils_Tuple2(2, $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2(3, $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2(4, $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2(5, $gampleman$elm_mapbox$Mapbox$Expression$false)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$true,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('layer'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('bridge'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('trunk_link'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('type')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									12,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(18))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 229, 203, 117, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'bridge-motorway_link',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('motorway_link'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesFloat,
+											_List_fromArray(
+												[
+													_Utils_Tuple2(2, $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2(3, $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2(4, $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2(5, $gampleman$elm_mapbox$Mapbox$Expression$false)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$true,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('layer'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('bridge'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									12,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(18))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 229, 171, 127, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'bridge-pedestrian',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('pedestrian'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('bridge'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(12))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineDasharray(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$step,
+							$gampleman$elm_mapbox$Mapbox$Expression$floats(
+								_List_fromArray(
+									[1, 0])),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									15,
+									$gampleman$elm_mapbox$Mapbox$Expression$floats(
+										_List_fromArray(
+											[1.5, 0.4]))),
+									_Utils_Tuple2(
+									16,
+									$gampleman$elm_mapbox$Mapbox$Expression$floats(
+										_List_fromArray(
+											[1, 0.2])))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'bridge-track',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('track'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('bridge'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									15,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(12))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'bridge-service-link',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(14),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('link', $gampleman$elm_mapbox$Mapbox$Expression$true),
+													_Utils_Tuple2('service', $gampleman$elm_mapbox$Mapbox$Expression$true),
+													_Utils_Tuple2('track', $gampleman$elm_mapbox$Mapbox$Expression$true)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$false,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('bridge'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$notEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('trunk_link'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('type')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(12))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'bridge-street_limited',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('street_limited'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('bridge'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									12.5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(18))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 239, 237, 234, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									13.99,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'bridge-street',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('street'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('bridge'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									12.5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(18))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									13.99,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'bridge-secondary-tertiary',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('bridge'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure'))),
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('secondary', $gampleman$elm_mapbox$Mapbox$Expression$true),
+													_Utils_Tuple2('tertiary', $gampleman$elm_mapbox$Mapbox$Expression$true)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$false,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('type')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									8.5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+									_Utils_Tuple2(
+									10,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(26))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.2),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									5.5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'bridge-primary',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('bridge'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('primary'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('type')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(32))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.2),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									5.5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$symbol,
+				'bridge-oneway-arrows-blue-minor',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(16),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('link', $gampleman$elm_mapbox$Mapbox$Expression$true),
+													_Utils_Tuple2('path', $gampleman$elm_mapbox$Mapbox$Expression$true),
+													_Utils_Tuple2('pedestrian', $gampleman$elm_mapbox$Mapbox$Expression$true),
+													_Utils_Tuple2('service', $gampleman$elm_mapbox$Mapbox$Expression$true),
+													_Utils_Tuple2('track', $gampleman$elm_mapbox$Mapbox$Expression$true)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$false,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('true'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('oneway'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('bridge'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$symbolPlacement($gampleman$elm_mapbox$Mapbox$Expression$line),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconImage(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$step,
+							$gampleman$elm_mapbox$Mapbox$Expression$str('oneway-small'),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('oneway-large'))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$symbolSpacing(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(200)),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconRotationAlignment($gampleman$elm_mapbox$Mapbox$Expression$map),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconPadding(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(2))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$symbol,
+				'bridge-oneway-arrows-blue-major',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('primary', $gampleman$elm_mapbox$Mapbox$Expression$true),
+													_Utils_Tuple2('secondary', $gampleman$elm_mapbox$Mapbox$Expression$true),
+													_Utils_Tuple2('street', $gampleman$elm_mapbox$Mapbox$Expression$true),
+													_Utils_Tuple2('street_limited', $gampleman$elm_mapbox$Mapbox$Expression$true),
+													_Utils_Tuple2('tertiary', $gampleman$elm_mapbox$Mapbox$Expression$true)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$false,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('true'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('oneway'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('bridge'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$symbolPlacement($gampleman$elm_mapbox$Mapbox$Expression$line),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconImage(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$step,
+							$gampleman$elm_mapbox$Mapbox$Expression$str('oneway-small'),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									17,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('oneway-large'))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$symbolSpacing(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(200)),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconRotationAlignment($gampleman$elm_mapbox$Mapbox$Expression$map),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconPadding(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(2))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'bridge-trunk',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('trunk'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesFloat,
+											_List_fromArray(
+												[
+													_Utils_Tuple2(2, $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2(3, $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2(4, $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2(5, $gampleman$elm_mapbox$Mapbox$Expression$false)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$true,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('layer'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('bridge'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(32))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 229, 203, 117, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'bridge-motorway',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('motorway'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesFloat,
+											_List_fromArray(
+												[
+													_Utils_Tuple2(2, $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2(3, $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2(4, $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2(5, $gampleman$elm_mapbox$Mapbox$Expression$false)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$true,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('layer'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('bridge'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(32))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 229, 171, 127, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'bridge-rail',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('major_rail', $gampleman$elm_mapbox$Mapbox$Expression$true),
+													_Utils_Tuple2('minor_rail', $gampleman$elm_mapbox$Mapbox$Expression$true)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$false,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('bridge'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									13,
+									A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 216, 214, 201, 1)),
+									_Utils_Tuple2(
+									16,
+									A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 182, 184, 195, 1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+									_Utils_Tuple2(
+									20,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'bridge-rail-tracks',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('major_rail', $gampleman$elm_mapbox$Mapbox$Expression$true),
+													_Utils_Tuple2('minor_rail', $gampleman$elm_mapbox$Mapbox$Expression$true)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$false,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('bridge'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									13,
+									A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 216, 214, 201, 1)),
+									_Utils_Tuple2(
+									16,
+									A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 182, 184, 195, 1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(4)),
+									_Utils_Tuple2(
+									20,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(8))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineDasharray(
+						$gampleman$elm_mapbox$Mapbox$Expression$floats(
+							_List_fromArray(
+								[0.1, 15]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									13.75,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									20,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'bridge-trunk_link-2-case',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$greaterThanOrEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$float(2),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('layer'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('bridge'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('trunk_link'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('type')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									12,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75)),
+									_Utils_Tuple2(
+									20,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineGapWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									12,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(18))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									10.99,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									11,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'bridge-motorway_link-2-case',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('motorway_link'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$greaterThanOrEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$float(2),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('layer'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('bridge'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									12,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75)),
+									_Utils_Tuple2(
+									20,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineGapWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									12,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(18))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'bridge-trunk-2-case',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('trunk'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$greaterThanOrEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$float(2),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('layer'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('bridge'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									10,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+									_Utils_Tuple2(
+									16,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineGapWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(32))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'bridge-motorway-2-case',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('motorway'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$greaterThanOrEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$float(2),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('layer'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('bridge'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									10,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+									_Utils_Tuple2(
+									16,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineGapWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(32))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'bridge-trunk_link-2',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$greaterThanOrEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$float(2),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('layer'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('bridge'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('trunk_link'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('type')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									12,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(18))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 229, 203, 117, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'bridge-motorway_link-2',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('motorway_link'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$greaterThanOrEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$float(2),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('layer'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('bridge'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									12,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(18))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 229, 171, 127, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'bridge-trunk-2',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('trunk'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$greaterThanOrEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$float(2),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('layer'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('bridge'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(32))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 229, 203, 117, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'bridge-motorway-2',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('motorway'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$greaterThanOrEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$float(2),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('layer'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('bridge'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(32))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 229, 171, 127, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$symbol,
+				'bridge-oneway-arrows-white',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(16),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									$gampleman$elm_mapbox$Mapbox$Expression$all(
+									_List_fromArray(
+										[
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('link', $gampleman$elm_mapbox$Mapbox$Expression$true),
+													_Utils_Tuple2('trunk', $gampleman$elm_mapbox$Mapbox$Expression$true)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$false,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('class'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('true'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('oneway'))),
+											A2(
+											$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+											$gampleman$elm_mapbox$Mapbox$Expression$str('bridge'),
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('structure'))),
+											A3(
+											$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+											_List_fromArray(
+												[
+													_Utils_Tuple2('primary_link', $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2('secondary_link', $gampleman$elm_mapbox$Mapbox$Expression$false),
+													_Utils_Tuple2('tertiary_link', $gampleman$elm_mapbox$Mapbox$Expression$false)
+												]),
+											$gampleman$elm_mapbox$Mapbox$Expression$true,
+											$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+												$gampleman$elm_mapbox$Mapbox$Expression$str('type')))
+										]))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconOpacity(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+						$gampleman$elm_mapbox$Mapbox$Layer$symbolPlacement($gampleman$elm_mapbox$Mapbox$Expression$line),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconImage(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$step,
+							$gampleman$elm_mapbox$Mapbox$Expression$str('oneway-white-small'),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									17,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('oneway-white-large'))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$symbolSpacing(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(200)),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconPadding(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(2))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'aerialway-bg',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('aerialway'),
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('class')))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2.5)),
+									_Utils_Tuple2(
+									20,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(3))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineBlur(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'aerialway',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('aerialway'),
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('class')))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 70, 71, 76, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.5),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+									_Utils_Tuple2(
+									20,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'admin-3-4-boundaries-bg',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('admin'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$greaterThanOrEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(3),
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('admin_level'))),
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0),
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('maritime')))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									8,
+									A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 230, 227, 223, 1)),
+									_Utils_Tuple2(
+									16,
+									A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 217, 221, 241, 1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									7,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(3.75)),
+									_Utils_Tuple2(
+									12,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(5.5))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									7,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									8,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineDasharray(
+						$gampleman$elm_mapbox$Mapbox$Expression$floats(
+							_List_fromArray(
+								[1, 0]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineTranslate(
+						$gampleman$elm_mapbox$Mapbox$Expression$floats(
+							_List_fromArray(
+								[0, 0]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineBlur(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									3,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									8,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(3))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$bevel)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'admin-2-boundaries-bg',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('admin'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(1),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2),
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('admin_level'))),
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0),
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('maritime')))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									3,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(3.5)),
+									_Utils_Tuple2(
+									10,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(8))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									6,
+									A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 230, 227, 223, 1)),
+									_Utils_Tuple2(
+									8,
+									A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 217, 221, 241, 1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									3,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									4,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.5))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineTranslate(
+						$gampleman$elm_mapbox$Mapbox$Expression$floats(
+							_List_fromArray(
+								[0, 0]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineBlur(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									3,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									10,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$miter)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'admin-3-4-boundaries',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('admin'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$greaterThanOrEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(3),
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('admin_level'))),
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0),
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('maritime')))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineDasharray(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$step,
+							$gampleman$elm_mapbox$Mapbox$Expression$floats(
+								_List_fromArray(
+									[2, 0])),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									7,
+									$gampleman$elm_mapbox$Mapbox$Expression$floats(
+										_List_fromArray(
+											[2, 2, 6, 2])))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									7,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.75)),
+									_Utils_Tuple2(
+									12,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1.5))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									2,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									3,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									3,
+									A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 188, 190, 204, 1)),
+									_Utils_Tuple2(
+									7,
+									A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 150, 152, 165, 1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'admin-2-boundaries',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('admin'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(1),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2),
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('admin_level'))),
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0),
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('disputed'))),
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0),
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('maritime')))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 120, 123, 140, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									3,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+									_Utils_Tuple2(
+									10,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineCap($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$line,
+				'admin-2-boundaries-dispute',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('admin'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(1),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2),
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('admin_level'))),
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1),
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('disputed'))),
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0),
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('maritime')))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineDasharray(
+						$gampleman$elm_mapbox$Mapbox$Expression$floats(
+							_List_fromArray(
+								[1.5, 1.5]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 120, 123, 140, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									3,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+									_Utils_Tuple2(
+									10,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$lineJoin($gampleman$elm_mapbox$Mapbox$Expression$rounded)
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$symbol,
+				'housenum-label',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('housenum_label'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(17),
+						$gampleman$elm_mapbox$Mapbox$Layer$textColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 177, 176, 174, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 219, 217, 213, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloBlur(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textField(
+						$gampleman$elm_mapbox$Mapbox$Expression$toFormattedText(
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('house_num')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textFont(
+						$gampleman$elm_mapbox$Mapbox$Expression$strings(
+							_List_fromArray(
+								['DIN Offc Pro Italic', 'Arial Unicode MS Regular']))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textPadding(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(4)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textMaxWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(7)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textSize(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(9.5))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$symbol,
+				'contour-label',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('contour'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$matchesFloat,
+							_List_fromArray(
+								[
+									_Utils_Tuple2(5, $gampleman$elm_mapbox$Mapbox$Expression$true),
+									_Utils_Tuple2(10, $gampleman$elm_mapbox$Mapbox$Expression$true)
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$false,
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('index')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 57, 114, 28, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloBlur(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 0.5)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textField(
+						$gampleman$elm_mapbox$Mapbox$Expression$toFormattedText(
+							A2(
+								$gampleman$elm_mapbox$Mapbox$Expression$append,
+								$gampleman$elm_mapbox$Mapbox$Expression$str(' m'),
+								$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+									$gampleman$elm_mapbox$Mapbox$Expression$str('ele'))))),
+						$gampleman$elm_mapbox$Mapbox$Layer$symbolPlacement($gampleman$elm_mapbox$Mapbox$Expression$line),
+						$gampleman$elm_mapbox$Mapbox$Layer$textMaxAngle(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(25)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textPadding(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(5)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textFont(
+						$gampleman$elm_mapbox$Mapbox$Expression$strings(
+							_List_fromArray(
+								['DIN Offc Pro Medium', 'Arial Unicode MS Regular']))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textSize(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									15,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(9.5)),
+									_Utils_Tuple2(
+									20,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(12))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$symbol,
+				'waterway-label',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('waterway_label'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(12),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+							_List_fromArray(
+								[
+									_Utils_Tuple2('canal', $gampleman$elm_mapbox$Mapbox$Expression$true),
+									_Utils_Tuple2('river', $gampleman$elm_mapbox$Mapbox$Expression$true)
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$false,
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('class')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 117, 207, 239, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 58, 76, 166, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloBlur(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textField(
+						$gampleman$elm_mapbox$Mapbox$Expression$toFormattedText(
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('name_en')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textFont(
+						$gampleman$elm_mapbox$Mapbox$Expression$strings(
+							_List_fromArray(
+								['DIN Offc Pro Italic', 'Arial Unicode MS Regular']))),
+						$gampleman$elm_mapbox$Mapbox$Layer$symbolPlacement($gampleman$elm_mapbox$Mapbox$Expression$line),
+						$gampleman$elm_mapbox$Mapbox$Layer$textMaxAngle(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(30)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textSize(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									13,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(12)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(16))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$symbol,
+				'poi-relevant-scalerank4-l15',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('poi_label'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(17),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$greaterThanOrEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(15),
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('localrank'))),
+									A3(
+									$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+									_List_fromArray(
+										[
+											_Utils_Tuple2('amusement-park', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('aquarium', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('attraction', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('bakery', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('bank', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('bar', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('beer', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('bus', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('cafe', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('castle', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('college', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('doctor', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('fast-food', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('ferry', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('fire-station', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('fuel', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('grocery', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('harbor', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('hospital', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('ice-cream', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('lodging', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('marker', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('monument', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('museum', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('pharmacy', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('police', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('post', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('restaurant', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('rocket', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('stadium', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('swimming', $gampleman$elm_mapbox$Mapbox$Expression$true)
+										]),
+									$gampleman$elm_mapbox$Mapbox$Expression$false,
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('maki'))),
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(4),
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('scalerank')))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 102, 78, 61, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloBlur(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textLineHeight(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1.1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textSize(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									16,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(11)),
+									_Utils_Tuple2(
+									20,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(13))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconImage(
+						A2(
+							$gampleman$elm_mapbox$Mapbox$Expression$append,
+							$gampleman$elm_mapbox$Mapbox$Expression$str('-11'),
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('maki')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textMaxAngle(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(38)),
+						$gampleman$elm_mapbox$Mapbox$Layer$symbolSpacing(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(250)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textFont(
+						$gampleman$elm_mapbox$Mapbox$Expression$strings(
+							_List_fromArray(
+								['DIN Offc Pro Medium', 'Arial Unicode MS Regular']))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textPadding(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textOffset(
+						$gampleman$elm_mapbox$Mapbox$Expression$floats(
+							_List_fromArray(
+								[0, 0.65]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textRotationAlignment($gampleman$elm_mapbox$Mapbox$Expression$viewport),
+						$gampleman$elm_mapbox$Mapbox$Layer$textAnchor($gampleman$elm_mapbox$Mapbox$Expression$top),
+						$gampleman$elm_mapbox$Mapbox$Layer$textField(
+						$gampleman$elm_mapbox$Mapbox$Expression$toFormattedText(
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('name_en')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textLetterSpacing(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.01)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textMaxWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(8))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$symbol,
+				'poi-relevant-scalerank4-l1',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('poi_label'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$lessThanOrEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(14),
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('localrank'))),
+									A3(
+									$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+									_List_fromArray(
+										[
+											_Utils_Tuple2('amusement-park', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('aquarium', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('attraction', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('bakery', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('bank', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('bar', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('beer', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('bus', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('cafe', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('castle', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('college', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('doctor', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('fast-food', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('ferry', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('fire-station', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('fuel', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('grocery', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('harbor', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('hospital', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('ice-cream', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('lodging', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('marker', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('monument', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('museum', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('pharmacy', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('police', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('post', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('restaurant', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('rocket', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('stadium', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('swimming', $gampleman$elm_mapbox$Mapbox$Expression$true)
+										]),
+									$gampleman$elm_mapbox$Mapbox$Expression$false,
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('maki'))),
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(4),
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('scalerank')))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 102, 78, 61, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloBlur(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textLineHeight(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1.1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textSize(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									16,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(11)),
+									_Utils_Tuple2(
+									20,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(13))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconImage(
+						A2(
+							$gampleman$elm_mapbox$Mapbox$Expression$append,
+							$gampleman$elm_mapbox$Mapbox$Expression$str('-11'),
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('maki')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textMaxAngle(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(38)),
+						$gampleman$elm_mapbox$Mapbox$Layer$symbolSpacing(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(250)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textFont(
+						$gampleman$elm_mapbox$Mapbox$Expression$strings(
+							_List_fromArray(
+								['DIN Offc Pro Medium', 'Arial Unicode MS Regular']))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textPadding(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textOffset(
+						$gampleman$elm_mapbox$Mapbox$Expression$floats(
+							_List_fromArray(
+								[0, 0.65]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textRotationAlignment($gampleman$elm_mapbox$Mapbox$Expression$viewport),
+						$gampleman$elm_mapbox$Mapbox$Layer$textAnchor($gampleman$elm_mapbox$Mapbox$Expression$top),
+						$gampleman$elm_mapbox$Mapbox$Layer$textField(
+						$gampleman$elm_mapbox$Mapbox$Expression$toFormattedText(
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('name_en')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textLetterSpacing(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.01)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textMaxWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(8))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$symbol,
+				'poi-parks_scalerank4',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('poi_label'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A3(
+									$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+									_List_fromArray(
+										[
+											_Utils_Tuple2('campsite', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('cemetery', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('dog-park', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('garden', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('golf', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('park', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('picnic-site', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('playground', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('zoo', $gampleman$elm_mapbox$Mapbox$Expression$true)
+										]),
+									$gampleman$elm_mapbox$Mapbox$Expression$false,
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('maki'))),
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(4),
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('scalerank')))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 33, 102, 0, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloBlur(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textLineHeight(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1.1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textSize(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									16,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(11)),
+									_Utils_Tuple2(
+									20,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(13))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconImage(
+						A2(
+							$gampleman$elm_mapbox$Mapbox$Expression$append,
+							$gampleman$elm_mapbox$Mapbox$Expression$str('-11'),
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('maki')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textMaxAngle(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(38)),
+						$gampleman$elm_mapbox$Mapbox$Layer$symbolSpacing(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(250)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textFont(
+						$gampleman$elm_mapbox$Mapbox$Expression$strings(
+							_List_fromArray(
+								['DIN Offc Pro Medium', 'Arial Unicode MS Regular']))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textPadding(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textOffset(
+						$gampleman$elm_mapbox$Mapbox$Expression$floats(
+							_List_fromArray(
+								[0, 0.65]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textRotationAlignment($gampleman$elm_mapbox$Mapbox$Expression$viewport),
+						$gampleman$elm_mapbox$Mapbox$Layer$textAnchor($gampleman$elm_mapbox$Mapbox$Expression$top),
+						$gampleman$elm_mapbox$Mapbox$Layer$textField(
+						$gampleman$elm_mapbox$Mapbox$Expression$toFormattedText(
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('name_en')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textLetterSpacing(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.01)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textMaxWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(8))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$symbol,
+				'poi-scalerank3',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('poi_label'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A3(
+									$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+									_List_fromArray(
+										[
+											_Utils_Tuple2('campsite', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('cemetery', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('dog-park', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('garden', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('golf', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('park', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('picnic-site', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('playground', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('zoo', $gampleman$elm_mapbox$Mapbox$Expression$false)
+										]),
+									$gampleman$elm_mapbox$Mapbox$Expression$true,
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('maki'))),
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(3),
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('scalerank')))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 102, 78, 61, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloBlur(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textLineHeight(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1.1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textSize(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									16,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(11)),
+									_Utils_Tuple2(
+									20,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(13))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconImage(
+						A2(
+							$gampleman$elm_mapbox$Mapbox$Expression$append,
+							$gampleman$elm_mapbox$Mapbox$Expression$str('-11'),
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('maki')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textMaxAngle(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(38)),
+						$gampleman$elm_mapbox$Mapbox$Layer$symbolSpacing(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(250)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textFont(
+						$gampleman$elm_mapbox$Mapbox$Expression$strings(
+							_List_fromArray(
+								['DIN Offc Pro Medium', 'Arial Unicode MS Regular']))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textPadding(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textOffset(
+						$gampleman$elm_mapbox$Mapbox$Expression$floats(
+							_List_fromArray(
+								[0, 0.65]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textRotationAlignment($gampleman$elm_mapbox$Mapbox$Expression$viewport),
+						$gampleman$elm_mapbox$Mapbox$Layer$textAnchor($gampleman$elm_mapbox$Mapbox$Expression$top),
+						$gampleman$elm_mapbox$Mapbox$Layer$textField(
+						$gampleman$elm_mapbox$Mapbox$Expression$toFormattedText(
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('name_en')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textLetterSpacing(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.01)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textMaxWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(8))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$symbol,
+				'poi-parks-scalerank3',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('poi_label'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A3(
+									$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+									_List_fromArray(
+										[
+											_Utils_Tuple2('campsite', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('cemetery', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('dog-park', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('garden', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('golf', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('park', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('picnic-site', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('playground', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('zoo', $gampleman$elm_mapbox$Mapbox$Expression$true)
+										]),
+									$gampleman$elm_mapbox$Mapbox$Expression$false,
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('maki'))),
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(3),
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('scalerank')))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 33, 102, 0, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloBlur(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textLineHeight(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1.1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textSize(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									16,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(11)),
+									_Utils_Tuple2(
+									20,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(13))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconImage(
+						A2(
+							$gampleman$elm_mapbox$Mapbox$Expression$append,
+							$gampleman$elm_mapbox$Mapbox$Expression$str('-11'),
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('maki')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textMaxAngle(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(38)),
+						$gampleman$elm_mapbox$Mapbox$Layer$symbolSpacing(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(250)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textFont(
+						$gampleman$elm_mapbox$Mapbox$Expression$strings(
+							_List_fromArray(
+								['DIN Offc Pro Medium', 'Arial Unicode MS Regular']))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textPadding(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(2)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textOffset(
+						$gampleman$elm_mapbox$Mapbox$Expression$floats(
+							_List_fromArray(
+								[0, 0.65]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textRotationAlignment($gampleman$elm_mapbox$Mapbox$Expression$viewport),
+						$gampleman$elm_mapbox$Mapbox$Layer$textAnchor($gampleman$elm_mapbox$Mapbox$Expression$top),
+						$gampleman$elm_mapbox$Mapbox$Layer$textField(
+						$gampleman$elm_mapbox$Mapbox$Expression$toFormattedText(
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('name_en')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textLetterSpacing(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.01)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textMaxWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(8))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$symbol,
+				'road-label-small',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road_label'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									A3(
+									$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+									_List_fromArray(
+										[
+											_Utils_Tuple2('aerialway', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('link', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('motorway', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('path', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('pedestrian', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('primary', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('secondary', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('street', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('street_limited', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('tertiary', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('trunk', $gampleman$elm_mapbox$Mapbox$Expression$false)
+										]),
+									$gampleman$elm_mapbox$Mapbox$Expression$true,
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('class')))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 0, 0, 0, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1.25)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloBlur(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textSize(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									15,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(10)),
+									_Utils_Tuple2(
+									20,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(13))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textMaxAngle(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(30)),
+						$gampleman$elm_mapbox$Mapbox$Layer$symbolSpacing(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(250)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textFont(
+						$gampleman$elm_mapbox$Mapbox$Expression$strings(
+							_List_fromArray(
+								['DIN Offc Pro Regular', 'Arial Unicode MS Regular']))),
+						$gampleman$elm_mapbox$Mapbox$Layer$symbolPlacement($gampleman$elm_mapbox$Mapbox$Expression$line),
+						$gampleman$elm_mapbox$Mapbox$Layer$textPadding(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textRotationAlignment($gampleman$elm_mapbox$Mapbox$Expression$map),
+						$gampleman$elm_mapbox$Mapbox$Layer$textField(
+						$gampleman$elm_mapbox$Mapbox$Expression$toFormattedText(
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('name_en')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textLetterSpacing(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.01))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$symbol,
+				'road-label-medium',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road_label'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									A3(
+									$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+									_List_fromArray(
+										[
+											_Utils_Tuple2('aerialway', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('link', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('path', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('pedestrian', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('street', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('street_limited', $gampleman$elm_mapbox$Mapbox$Expression$true)
+										]),
+									$gampleman$elm_mapbox$Mapbox$Expression$false,
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('class')))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 0, 0, 0, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textSize(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									11,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(10)),
+									_Utils_Tuple2(
+									20,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(14))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textMaxAngle(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(30)),
+						$gampleman$elm_mapbox$Mapbox$Layer$symbolSpacing(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(250)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textFont(
+						$gampleman$elm_mapbox$Mapbox$Expression$strings(
+							_List_fromArray(
+								['DIN Offc Pro Regular', 'Arial Unicode MS Regular']))),
+						$gampleman$elm_mapbox$Mapbox$Layer$symbolPlacement($gampleman$elm_mapbox$Mapbox$Expression$line),
+						$gampleman$elm_mapbox$Mapbox$Layer$textPadding(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textRotationAlignment($gampleman$elm_mapbox$Mapbox$Expression$map),
+						$gampleman$elm_mapbox$Mapbox$Layer$textField(
+						$gampleman$elm_mapbox$Mapbox$Expression$toFormattedText(
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('name_en')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textLetterSpacing(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.01))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$symbol,
+				'road-label-large',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road_label'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+							_List_fromArray(
+								[
+									_Utils_Tuple2('motorway', $gampleman$elm_mapbox$Mapbox$Expression$true),
+									_Utils_Tuple2('primary', $gampleman$elm_mapbox$Mapbox$Expression$true),
+									_Utils_Tuple2('secondary', $gampleman$elm_mapbox$Mapbox$Expression$true),
+									_Utils_Tuple2('tertiary', $gampleman$elm_mapbox$Mapbox$Expression$true),
+									_Utils_Tuple2('trunk', $gampleman$elm_mapbox$Mapbox$Expression$true)
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$false,
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('class')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 0, 0, 0, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 0.75)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloBlur(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textSize(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									9,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(10)),
+									_Utils_Tuple2(
+									20,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(16))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textMaxAngle(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(30)),
+						$gampleman$elm_mapbox$Mapbox$Layer$symbolSpacing(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(250)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textFont(
+						$gampleman$elm_mapbox$Mapbox$Expression$strings(
+							_List_fromArray(
+								['DIN Offc Pro Regular', 'Arial Unicode MS Regular']))),
+						$gampleman$elm_mapbox$Mapbox$Layer$symbolPlacement($gampleman$elm_mapbox$Mapbox$Expression$line),
+						$gampleman$elm_mapbox$Mapbox$Layer$textPadding(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textRotationAlignment($gampleman$elm_mapbox$Mapbox$Expression$map),
+						$gampleman$elm_mapbox$Mapbox$Layer$textField(
+						$gampleman$elm_mapbox$Mapbox$Expression$toFormattedText(
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('name_en')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textLetterSpacing(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.01))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$symbol,
+				'road-shields-black',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road_label'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$lessThanOrEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(6),
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('reflen'))),
+									A3(
+									$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+									_List_fromArray(
+										[
+											_Utils_Tuple2('at-expressway', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('at-motorway', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('at-state-b', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('bg-motorway', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('bg-national', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('ch-main', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('ch-motorway', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('cz-motorway', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('cz-road', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('de-motorway', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('e-road', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('fi-main', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('gr-motorway', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('gr-national', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('hr-motorway', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('hr-state', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('hu-main', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('hu-motorway', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('nz-state', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('pl-expressway', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('pl-motorway', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('pl-national', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('ro-county', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('ro-motorway', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('ro-national', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('rs-motorway', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('rs-state-1b', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('se-main', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('si-expressway', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('si-motorway', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('sk-highway', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('sk-road', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('us-interstate', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('us-interstate-business', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('us-interstate-duplex', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('us-interstate-truck', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('za-metropolitan', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('za-national', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('za-provincial', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('za-regional', $gampleman$elm_mapbox$Mapbox$Expression$false)
+										]),
+									$gampleman$elm_mapbox$Mapbox$Expression$true,
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('shield')))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 74, 81, 114, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconHaloColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 0, 0, 0, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconHaloWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textOpacity(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textSize(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(9)),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconImage(
+						A2(
+							$gampleman$elm_mapbox$Mapbox$Expression$append,
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('reflen')),
+							A2(
+								$gampleman$elm_mapbox$Mapbox$Expression$append,
+								$gampleman$elm_mapbox$Mapbox$Expression$str('-'),
+								$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+									$gampleman$elm_mapbox$Mapbox$Expression$str('shield'))))),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconRotationAlignment($gampleman$elm_mapbox$Mapbox$Expression$viewport),
+						$gampleman$elm_mapbox$Mapbox$Layer$textMaxAngle(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(38)),
+						$gampleman$elm_mapbox$Mapbox$Layer$symbolSpacing(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									11,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(150)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(200))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textFont(
+						$gampleman$elm_mapbox$Mapbox$Expression$strings(
+							_List_fromArray(
+								['DIN Offc Pro Bold', 'Arial Unicode MS Bold']))),
+						$gampleman$elm_mapbox$Mapbox$Layer$symbolPlacement(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$step,
+							$gampleman$elm_mapbox$Mapbox$Expression$point,
+							_List_fromArray(
+								[
+									_Utils_Tuple2(11, $gampleman$elm_mapbox$Mapbox$Expression$line)
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textPadding(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(2)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textRotationAlignment($gampleman$elm_mapbox$Mapbox$Expression$viewport),
+						$gampleman$elm_mapbox$Mapbox$Layer$textField(
+						$gampleman$elm_mapbox$Mapbox$Expression$toFormattedText(
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('ref')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textLetterSpacing(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.05)),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconPadding(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(2))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$symbol,
+				'road-shields-white',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('road_label'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$lessThanOrEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(6),
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('reflen'))),
+									A3(
+									$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+									_List_fromArray(
+										[
+											_Utils_Tuple2('at-expressway', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('at-motorway', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('at-state-b', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('bg-motorway', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('bg-national', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('ch-main', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('ch-motorway', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('cz-motorway', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('cz-road', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('de-motorway', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('e-road', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('fi-main', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('gr-motorway', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('gr-national', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('hr-motorway', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('hr-state', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('hu-main', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('hu-motorway', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('nz-state', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('pl-expressway', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('pl-motorway', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('pl-national', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('ro-county', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('ro-motorway', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('ro-national', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('rs-motorway', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('rs-state-1b', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('se-main', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('si-expressway', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('si-motorway', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('sk-highway', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('sk-road', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('us-interstate', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('us-interstate-business', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('us-interstate-duplex', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('us-interstate-truck', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('za-metropolitan', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('za-national', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('za-provincial', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('za-regional', $gampleman$elm_mapbox$Mapbox$Expression$true)
+										]),
+									$gampleman$elm_mapbox$Mapbox$Expression$false,
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('shield')))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconHaloColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 0, 0, 0, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconHaloWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textOpacity(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textSize(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(9)),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconImage(
+						A2(
+							$gampleman$elm_mapbox$Mapbox$Expression$append,
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('reflen')),
+							A2(
+								$gampleman$elm_mapbox$Mapbox$Expression$append,
+								$gampleman$elm_mapbox$Mapbox$Expression$str('-'),
+								$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+									$gampleman$elm_mapbox$Mapbox$Expression$str('shield'))))),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconRotationAlignment($gampleman$elm_mapbox$Mapbox$Expression$viewport),
+						$gampleman$elm_mapbox$Mapbox$Layer$textMaxAngle(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(38)),
+						$gampleman$elm_mapbox$Mapbox$Layer$symbolSpacing(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									11,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(150)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(200))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textFont(
+						$gampleman$elm_mapbox$Mapbox$Expression$strings(
+							_List_fromArray(
+								['DIN Offc Pro Bold', 'Arial Unicode MS Bold']))),
+						$gampleman$elm_mapbox$Mapbox$Layer$symbolPlacement(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$step,
+							$gampleman$elm_mapbox$Mapbox$Expression$point,
+							_List_fromArray(
+								[
+									_Utils_Tuple2(11, $gampleman$elm_mapbox$Mapbox$Expression$line)
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textPadding(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(2)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textRotationAlignment($gampleman$elm_mapbox$Mapbox$Expression$viewport),
+						$gampleman$elm_mapbox$Mapbox$Layer$textField(
+						$gampleman$elm_mapbox$Mapbox$Expression$toFormattedText(
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('ref')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textLetterSpacing(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.05)),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconPadding(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(2))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$symbol,
+				'motorway-junction',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('motorway_junction'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(14),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						A2(
+							$gampleman$elm_mapbox$Mapbox$Expression$greaterThan,
+							$gampleman$elm_mapbox$Mapbox$Expression$float(0),
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('reflen')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textTranslate(
+						$gampleman$elm_mapbox$Mapbox$Expression$floats(
+							_List_fromArray(
+								[0, 0]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textField(
+						$gampleman$elm_mapbox$Mapbox$Expression$toFormattedText(
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('ref')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textSize(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(9)),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconImage(
+						A2(
+							$gampleman$elm_mapbox$Mapbox$Expression$append,
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('reflen')),
+							$gampleman$elm_mapbox$Mapbox$Expression$str('motorway-exit-'))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textFont(
+						$gampleman$elm_mapbox$Mapbox$Expression$strings(
+							_List_fromArray(
+								['DIN Offc Pro Bold', 'Arial Unicode MS Bold'])))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$symbol,
+				'poi-outdoor-features',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('poi_label'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+							_List_fromArray(
+								[
+									_Utils_Tuple2('bicycle', $gampleman$elm_mapbox$Mapbox$Expression$true),
+									_Utils_Tuple2('bicycle-share', $gampleman$elm_mapbox$Mapbox$Expression$true),
+									_Utils_Tuple2('drinking-water', $gampleman$elm_mapbox$Mapbox$Expression$true),
+									_Utils_Tuple2('information', $gampleman$elm_mapbox$Mapbox$Expression$true),
+									_Utils_Tuple2('picnic-site', $gampleman$elm_mapbox$Mapbox$Expression$true),
+									_Utils_Tuple2('toilet', $gampleman$elm_mapbox$Mapbox$Expression$true)
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$false,
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('maki')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 102, 78, 61, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloBlur(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textLineHeight(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1.1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textSize(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									16,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(11)),
+									_Utils_Tuple2(
+									20,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(13))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconImage(
+						A2(
+							$gampleman$elm_mapbox$Mapbox$Expression$append,
+							$gampleman$elm_mapbox$Mapbox$Expression$str('-11'),
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('maki')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textMaxAngle(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(38)),
+						$gampleman$elm_mapbox$Mapbox$Layer$symbolSpacing(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(250)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textFont(
+						$gampleman$elm_mapbox$Mapbox$Expression$strings(
+							_List_fromArray(
+								['DIN Offc Pro Medium', 'Arial Unicode MS Regular']))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textPadding(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(2)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textOffset(
+						$gampleman$elm_mapbox$Mapbox$Expression$floats(
+							_List_fromArray(
+								[0, 0.65]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textRotationAlignment($gampleman$elm_mapbox$Mapbox$Expression$viewport),
+						$gampleman$elm_mapbox$Mapbox$Layer$textAnchor($gampleman$elm_mapbox$Mapbox$Expression$top),
+						$gampleman$elm_mapbox$Mapbox$Layer$textField(
+						$gampleman$elm_mapbox$Mapbox$Expression$toFormattedText(
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('name_en')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textLetterSpacing(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.01)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textMaxWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(8))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$symbol,
+				'mountain-peak-label',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('mountain_peak_label'),
+						$gampleman$elm_mapbox$Mapbox$Layer$textColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 33, 102, 0, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloBlur(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textLineHeight(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1.1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textSize(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									10,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(11)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(14))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconImage(
+						A2(
+							$gampleman$elm_mapbox$Mapbox$Expression$append,
+							$gampleman$elm_mapbox$Mapbox$Expression$str('-15'),
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('maki')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textFont(
+						$gampleman$elm_mapbox$Mapbox$Expression$strings(
+							_List_fromArray(
+								['DIN Offc Pro Medium', 'Arial Unicode MS Regular']))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textOffset(
+						$gampleman$elm_mapbox$Mapbox$Expression$floats(
+							_List_fromArray(
+								[0, 0.65]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textAnchor($gampleman$elm_mapbox$Mapbox$Expression$top),
+						$gampleman$elm_mapbox$Mapbox$Layer$textField(
+						$gampleman$elm_mapbox$Mapbox$Expression$toFormattedText(
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('name_en')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textLetterSpacing(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.01)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textMaxWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(8))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$symbol,
+				'mountain-peak-label-with-elevation',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('mountain_peak_label'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						A2(
+							$gampleman$elm_mapbox$Mapbox$Expression$greaterThan,
+							$gampleman$elm_mapbox$Mapbox$Expression$float(0),
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('elevation_m')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 33, 102, 0, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloBlur(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textLineHeight(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1.1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textSize(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									10,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(11)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(14))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconImage(
+						A2(
+							$gampleman$elm_mapbox$Mapbox$Expression$append,
+							$gampleman$elm_mapbox$Mapbox$Expression$str('-15'),
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('maki')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textFont(
+						$gampleman$elm_mapbox$Mapbox$Expression$strings(
+							_List_fromArray(
+								['DIN Offc Pro Medium', 'Arial Unicode MS Regular']))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textOffset(
+						$gampleman$elm_mapbox$Mapbox$Expression$floats(
+							_List_fromArray(
+								[0, 0.65]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textAnchor($gampleman$elm_mapbox$Mapbox$Expression$top),
+						$gampleman$elm_mapbox$Mapbox$Layer$textField(
+						$gampleman$elm_mapbox$Mapbox$Expression$toFormattedText(
+							A2(
+								$gampleman$elm_mapbox$Mapbox$Expression$append,
+								$gampleman$elm_mapbox$Mapbox$Expression$str('m'),
+								A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$append,
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('elevation_m')),
+									A2(
+										$gampleman$elm_mapbox$Mapbox$Expression$append,
+										$gampleman$elm_mapbox$Mapbox$Expression$str(', '),
+										$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+											$gampleman$elm_mapbox$Mapbox$Expression$str('name_en'))))))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textLetterSpacing(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.01)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textMaxWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(8))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$symbol,
+				'poi-scalerank2',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('poi_label'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A3(
+									$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+									_List_fromArray(
+										[
+											_Utils_Tuple2('campsite', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('cemetery', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('dog-park', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('garden', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('golf', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('park', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('picnic-site', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('playground', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('zoo', $gampleman$elm_mapbox$Mapbox$Expression$false)
+										]),
+									$gampleman$elm_mapbox$Mapbox$Expression$true,
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('maki'))),
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2),
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('scalerank')))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 102, 78, 61, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloBlur(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textLineHeight(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1.1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textSize(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(11)),
+									_Utils_Tuple2(
+									20,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(14))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconImage(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$step,
+							A2(
+								$gampleman$elm_mapbox$Mapbox$Expression$append,
+								$gampleman$elm_mapbox$Mapbox$Expression$str('-11'),
+								$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+									$gampleman$elm_mapbox$Mapbox$Expression$str('maki'))),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									15,
+									A2(
+										$gampleman$elm_mapbox$Mapbox$Expression$append,
+										$gampleman$elm_mapbox$Mapbox$Expression$str('-15'),
+										$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+											$gampleman$elm_mapbox$Mapbox$Expression$str('maki'))))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textMaxAngle(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(38)),
+						$gampleman$elm_mapbox$Mapbox$Layer$symbolSpacing(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(250)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textFont(
+						$gampleman$elm_mapbox$Mapbox$Expression$strings(
+							_List_fromArray(
+								['DIN Offc Pro Medium', 'Arial Unicode MS Regular']))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textPadding(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(2)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textOffset(
+						$gampleman$elm_mapbox$Mapbox$Expression$floats(
+							_List_fromArray(
+								[0, 0.65]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textRotationAlignment($gampleman$elm_mapbox$Mapbox$Expression$viewport),
+						$gampleman$elm_mapbox$Mapbox$Layer$textAnchor($gampleman$elm_mapbox$Mapbox$Expression$top),
+						$gampleman$elm_mapbox$Mapbox$Layer$textField(
+						$gampleman$elm_mapbox$Mapbox$Expression$toFormattedText(
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('name_en')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textLetterSpacing(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.01)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textMaxWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(8))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$symbol,
+				'poi-parks-scalerank2',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('poi_label'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A3(
+									$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+									_List_fromArray(
+										[
+											_Utils_Tuple2('campsite', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('cemetery', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('dog-park', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('garden', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('golf', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('park', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('picnic-site', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('playground', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('zoo', $gampleman$elm_mapbox$Mapbox$Expression$true)
+										]),
+									$gampleman$elm_mapbox$Mapbox$Expression$false,
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('maki'))),
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2),
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('scalerank')))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 33, 102, 0, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloBlur(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textLineHeight(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1.1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textSize(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(11)),
+									_Utils_Tuple2(
+									20,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(14))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconImage(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$step,
+							A2(
+								$gampleman$elm_mapbox$Mapbox$Expression$append,
+								$gampleman$elm_mapbox$Mapbox$Expression$str('-11'),
+								$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+									$gampleman$elm_mapbox$Mapbox$Expression$str('maki'))),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									15,
+									A2(
+										$gampleman$elm_mapbox$Mapbox$Expression$append,
+										$gampleman$elm_mapbox$Mapbox$Expression$str('-15'),
+										$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+											$gampleman$elm_mapbox$Mapbox$Expression$str('maki'))))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textMaxAngle(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(38)),
+						$gampleman$elm_mapbox$Mapbox$Layer$symbolSpacing(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(250)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textFont(
+						$gampleman$elm_mapbox$Mapbox$Expression$strings(
+							_List_fromArray(
+								['DIN Offc Pro Medium', 'Arial Unicode MS Regular']))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textPadding(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(2)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textOffset(
+						$gampleman$elm_mapbox$Mapbox$Expression$floats(
+							_List_fromArray(
+								[0, 0.65]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textRotationAlignment($gampleman$elm_mapbox$Mapbox$Expression$viewport),
+						$gampleman$elm_mapbox$Mapbox$Layer$textAnchor($gampleman$elm_mapbox$Mapbox$Expression$top),
+						$gampleman$elm_mapbox$Mapbox$Layer$textField(
+						$gampleman$elm_mapbox$Mapbox$Expression$toFormattedText(
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('name_en')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textLetterSpacing(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.01)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textMaxWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(8))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$symbol,
+				'rail-label',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('rail_station_label'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(12),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						A2(
+							$gampleman$elm_mapbox$Mapbox$Expression$notEqual,
+							$gampleman$elm_mapbox$Mapbox$Expression$str('entrance'),
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('maki')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 58, 76, 166, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconHaloWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(4)),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconHaloColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									13.99,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloBlur(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textLineHeight(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1.1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textSize(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									16,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(11)),
+									_Utils_Tuple2(
+									20,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(13))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconImage(
+						$gampleman$elm_mapbox$Mapbox$Expression$toString(
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('network')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$symbolSpacing(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(250)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textFont(
+						$gampleman$elm_mapbox$Mapbox$Expression$strings(
+							_List_fromArray(
+								['DIN Offc Pro Medium', 'Arial Unicode MS Regular']))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textOffset(
+						$gampleman$elm_mapbox$Mapbox$Expression$floats(
+							_List_fromArray(
+								[0, 0.85]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textRotationAlignment($gampleman$elm_mapbox$Mapbox$Expression$viewport),
+						$gampleman$elm_mapbox$Mapbox$Layer$textAnchor($gampleman$elm_mapbox$Mapbox$Expression$top),
+						$gampleman$elm_mapbox$Mapbox$Layer$textField(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$step,
+							$gampleman$elm_mapbox$Mapbox$Expression$toFormattedText(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('')),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									13,
+									$gampleman$elm_mapbox$Mapbox$Expression$toFormattedText(
+										$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+											$gampleman$elm_mapbox$Mapbox$Expression$str('name_en'))))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textLetterSpacing(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.01)),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconPadding(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textMaxWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(7))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$symbol,
+				'water-label-sm',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('water_label'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						A2(
+							$gampleman$elm_mapbox$Mapbox$Expression$lessThanOrEqual,
+							$gampleman$elm_mapbox$Mapbox$Expression$float(10000),
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('area')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 58, 76, 166, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textField(
+						$gampleman$elm_mapbox$Mapbox$Expression$toFormattedText(
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('name_en')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textFont(
+						$gampleman$elm_mapbox$Mapbox$Expression$strings(
+							_List_fromArray(
+								['DIN Offc Pro Italic', 'Arial Unicode MS Regular']))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textMaxWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(7)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textSize(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									16,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(13)),
+									_Utils_Tuple2(
+									20,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(16))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$symbol,
+				'water-label',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('water_label'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(5),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						A2(
+							$gampleman$elm_mapbox$Mapbox$Expression$greaterThan,
+							$gampleman$elm_mapbox$Mapbox$Expression$float(10000),
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('area')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 58, 76, 166, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textField(
+						$gampleman$elm_mapbox$Mapbox$Expression$toFormattedText(
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('name_en')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textFont(
+						$gampleman$elm_mapbox$Mapbox$Expression$strings(
+							_List_fromArray(
+								['DIN Offc Pro Italic', 'Arial Unicode MS Regular']))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textMaxWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(7)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textSize(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									13,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(13)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(18))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$symbol,
+				'poi-parks-scalerank1',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('poi_label'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A3(
+									$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+									_List_fromArray(
+										[
+											_Utils_Tuple2('campsite', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('cemetery', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('dog-park', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('garden', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('golf', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('park', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('picnic-site', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('playground', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('zoo', $gampleman$elm_mapbox$Mapbox$Expression$true)
+										]),
+									$gampleman$elm_mapbox$Mapbox$Expression$false,
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('maki'))),
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$lessThanOrEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1),
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('scalerank')))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 33, 102, 0, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloBlur(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textLineHeight(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1.1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textSize(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									10,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(11)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(14))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconImage(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$step,
+							A2(
+								$gampleman$elm_mapbox$Mapbox$Expression$append,
+								$gampleman$elm_mapbox$Mapbox$Expression$str('-11'),
+								$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+									$gampleman$elm_mapbox$Mapbox$Expression$str('maki'))),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									14,
+									A2(
+										$gampleman$elm_mapbox$Mapbox$Expression$append,
+										$gampleman$elm_mapbox$Mapbox$Expression$str('-15'),
+										$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+											$gampleman$elm_mapbox$Mapbox$Expression$str('maki'))))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textMaxAngle(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(38)),
+						$gampleman$elm_mapbox$Mapbox$Layer$symbolSpacing(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(250)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textFont(
+						$gampleman$elm_mapbox$Mapbox$Expression$strings(
+							_List_fromArray(
+								['DIN Offc Pro Medium', 'Arial Unicode MS Regular']))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textPadding(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(2)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textOffset(
+						$gampleman$elm_mapbox$Mapbox$Expression$floats(
+							_List_fromArray(
+								[0, 0.65]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textRotationAlignment($gampleman$elm_mapbox$Mapbox$Expression$viewport),
+						$gampleman$elm_mapbox$Mapbox$Layer$textAnchor($gampleman$elm_mapbox$Mapbox$Expression$top),
+						$gampleman$elm_mapbox$Mapbox$Layer$textField(
+						$gampleman$elm_mapbox$Mapbox$Expression$toFormattedText(
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('name_en')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textLetterSpacing(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.01)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textMaxWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(8))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$symbol,
+				'poi-scalerank1',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('poi_label'),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A3(
+									$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+									_List_fromArray(
+										[
+											_Utils_Tuple2('campsite', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('cemetery', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('dog-park', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('garden', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('golf', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('park', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('picnic-site', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('playground', $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2('zoo', $gampleman$elm_mapbox$Mapbox$Expression$false)
+										]),
+									$gampleman$elm_mapbox$Mapbox$Expression$true,
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('maki'))),
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$lessThanOrEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1),
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('scalerank')))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 102, 78, 61, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloBlur(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textLineHeight(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1.1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textSize(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									10,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(11)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(14))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconImage(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$step,
+							A2(
+								$gampleman$elm_mapbox$Mapbox$Expression$append,
+								$gampleman$elm_mapbox$Mapbox$Expression$str('-11'),
+								$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+									$gampleman$elm_mapbox$Mapbox$Expression$str('maki'))),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									14,
+									A2(
+										$gampleman$elm_mapbox$Mapbox$Expression$append,
+										$gampleman$elm_mapbox$Mapbox$Expression$str('-15'),
+										$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+											$gampleman$elm_mapbox$Mapbox$Expression$str('maki'))))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textMaxAngle(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(38)),
+						$gampleman$elm_mapbox$Mapbox$Layer$symbolSpacing(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(250)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textFont(
+						$gampleman$elm_mapbox$Mapbox$Expression$strings(
+							_List_fromArray(
+								['DIN Offc Pro Medium', 'Arial Unicode MS Regular']))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textPadding(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(2)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textOffset(
+						$gampleman$elm_mapbox$Mapbox$Expression$floats(
+							_List_fromArray(
+								[0, 0.65]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textRotationAlignment($gampleman$elm_mapbox$Mapbox$Expression$viewport),
+						$gampleman$elm_mapbox$Mapbox$Layer$textAnchor($gampleman$elm_mapbox$Mapbox$Expression$top),
+						$gampleman$elm_mapbox$Mapbox$Layer$textField(
+						$gampleman$elm_mapbox$Mapbox$Expression$toFormattedText(
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('name_en')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textLetterSpacing(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.01)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textMaxWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(8))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$symbol,
+				'airport-label',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('airport_label'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						A2(
+							$gampleman$elm_mapbox$Mapbox$Expression$lessThanOrEqual,
+							$gampleman$elm_mapbox$Mapbox$Expression$float(2),
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('scalerank')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 58, 76, 166, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloBlur(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textLineHeight(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1.1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textSize(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									10,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(12)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(18))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconImage(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$step,
+							A2(
+								$gampleman$elm_mapbox$Mapbox$Expression$append,
+								$gampleman$elm_mapbox$Mapbox$Expression$str('-11'),
+								$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+									$gampleman$elm_mapbox$Mapbox$Expression$str('maki'))),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									13,
+									A2(
+										$gampleman$elm_mapbox$Mapbox$Expression$append,
+										$gampleman$elm_mapbox$Mapbox$Expression$str('-15'),
+										$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+											$gampleman$elm_mapbox$Mapbox$Expression$str('maki'))))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$symbolSpacing(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(250)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textFont(
+						$gampleman$elm_mapbox$Mapbox$Expression$strings(
+							_List_fromArray(
+								['DIN Offc Pro Medium', 'Arial Unicode MS Regular']))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textPadding(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(2)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textOffset(
+						$gampleman$elm_mapbox$Mapbox$Expression$floats(
+							_List_fromArray(
+								[0, 0.75]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textRotationAlignment($gampleman$elm_mapbox$Mapbox$Expression$viewport),
+						$gampleman$elm_mapbox$Mapbox$Layer$textAnchor($gampleman$elm_mapbox$Mapbox$Expression$top),
+						$gampleman$elm_mapbox$Mapbox$Layer$textField(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$step,
+							$gampleman$elm_mapbox$Mapbox$Expression$toFormattedText(
+								$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+									$gampleman$elm_mapbox$Mapbox$Expression$str('ref'))),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									12,
+									$gampleman$elm_mapbox$Mapbox$Expression$toFormattedText(
+										$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+											$gampleman$elm_mapbox$Mapbox$Expression$str('name_en'))))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textLetterSpacing(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.01)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textMaxWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(9))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$symbol,
+				'place-islet-archipelago-aboriginal',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('place_label'),
+						$gampleman$elm_mapbox$Mapbox$Layer$maxzoom(16),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+							_List_fromArray(
+								[
+									_Utils_Tuple2('aboriginal_lands', $gampleman$elm_mapbox$Mapbox$Expression$true),
+									_Utils_Tuple2('archipelago', $gampleman$elm_mapbox$Mapbox$Expression$true),
+									_Utils_Tuple2('islet', $gampleman$elm_mapbox$Mapbox$Expression$true)
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$false,
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('type')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 63, 71, 115, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textLineHeight(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1.2)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textSize(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									10,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(11)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(16))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textMaxAngle(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(38)),
+						$gampleman$elm_mapbox$Mapbox$Layer$symbolSpacing(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(250)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textFont(
+						$gampleman$elm_mapbox$Mapbox$Expression$strings(
+							_List_fromArray(
+								['DIN Offc Pro Regular', 'Arial Unicode MS Regular']))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textPadding(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(2)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textOffset(
+						$gampleman$elm_mapbox$Mapbox$Expression$floats(
+							_List_fromArray(
+								[0, 0]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textRotationAlignment($gampleman$elm_mapbox$Mapbox$Expression$viewport),
+						$gampleman$elm_mapbox$Mapbox$Layer$textField(
+						$gampleman$elm_mapbox$Mapbox$Expression$toFormattedText(
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('name_en')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textLetterSpacing(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.01)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textMaxWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(8))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$symbol,
+				'place-neighbourhood',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('place_label'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(10),
+						$gampleman$elm_mapbox$Mapbox$Layer$maxzoom(16),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						A2(
+							$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+							$gampleman$elm_mapbox$Mapbox$Expression$str('neighbourhood'),
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('type')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 63, 71, 115, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloBlur(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textField(
+						$gampleman$elm_mapbox$Mapbox$Expression$toFormattedText(
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('name_en')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textTransform($gampleman$elm_mapbox$Mapbox$Expression$uppercase),
+						$gampleman$elm_mapbox$Mapbox$Layer$textLetterSpacing(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textMaxWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(7)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textFont(
+						$gampleman$elm_mapbox$Mapbox$Expression$strings(
+							_List_fromArray(
+								['DIN Offc Pro Regular', 'Arial Unicode MS Regular']))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textPadding(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(3)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textSize(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									12,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(11)),
+									_Utils_Tuple2(
+									16,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(16))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$symbol,
+				'place-suburb',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('place_label'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(10),
+						$gampleman$elm_mapbox$Mapbox$Layer$maxzoom(16),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						A2(
+							$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+							$gampleman$elm_mapbox$Mapbox$Expression$str('suburb'),
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('type')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 63, 71, 115, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloBlur(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.5)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textField(
+						$gampleman$elm_mapbox$Mapbox$Expression$toFormattedText(
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('name_en')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textTransform($gampleman$elm_mapbox$Mapbox$Expression$uppercase),
+						$gampleman$elm_mapbox$Mapbox$Layer$textFont(
+						$gampleman$elm_mapbox$Mapbox$Expression$strings(
+							_List_fromArray(
+								['DIN Offc Pro Regular', 'Arial Unicode MS Regular']))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textLetterSpacing(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.15)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textMaxWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(7)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textPadding(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(3)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textSize(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									11,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(11)),
+									_Utils_Tuple2(
+									15,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(18))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$symbol,
+				'place-hamlet',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('place_label'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(10),
+						$gampleman$elm_mapbox$Mapbox$Layer$maxzoom(16),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						A2(
+							$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+							$gampleman$elm_mapbox$Mapbox$Expression$str('hamlet'),
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('type')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1.25)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 0, 0, 0, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textField(
+						$gampleman$elm_mapbox$Mapbox$Expression$toFormattedText(
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('name_en')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textFont(
+						$gampleman$elm_mapbox$Mapbox$Expression$strings(
+							_List_fromArray(
+								['DIN Offc Pro Regular', 'Arial Unicode MS Regular']))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textSize(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									12,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(11.5)),
+									_Utils_Tuple2(
+									15,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(16))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$symbol,
+				'place-village',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('place_label'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$maxzoom(15),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						A2(
+							$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+							$gampleman$elm_mapbox$Mapbox$Expression$str('village'),
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('type')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1.25)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 0, 0, 0, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textField(
+						$gampleman$elm_mapbox$Mapbox$Expression$toFormattedText(
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('name_en')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textFont(
+						$gampleman$elm_mapbox$Mapbox$Expression$strings(
+							_List_fromArray(
+								['DIN Offc Pro Regular', 'Arial Unicode MS Regular']))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textMaxWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(7)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textSize(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									10,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(11.5)),
+									_Utils_Tuple2(
+									16,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(18))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$symbol,
+				'place-town',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('place_label'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(22),
+						$gampleman$elm_mapbox$Mapbox$Layer$maxzoom(15),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						A2(
+							$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+							$gampleman$elm_mapbox$Mapbox$Expression$str('town'),
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('type')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 0, 0, 0, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1.25)),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									7.99,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+									_Utils_Tuple2(
+									8,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconImage(
+						$gampleman$elm_mapbox$Mapbox$Expression$str('dot-9')),
+						$gampleman$elm_mapbox$Mapbox$Layer$textFont(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$step,
+							$gampleman$elm_mapbox$Mapbox$Expression$strings(
+								_List_fromArray(
+									['DIN Offc Pro Regular', 'Arial Unicode MS Regular'])),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									12,
+									$gampleman$elm_mapbox$Mapbox$Expression$strings(
+										_List_fromArray(
+											['DIN Offc Pro Medium', 'Arial Unicode MS Regular'])))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textOffset(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									7,
+									$gampleman$elm_mapbox$Mapbox$Expression$floats(
+										_List_fromArray(
+											[0, -0.15]))),
+									_Utils_Tuple2(
+									8,
+									$gampleman$elm_mapbox$Mapbox$Expression$floats(
+										_List_fromArray(
+											[0, 0])))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textAnchor(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$step,
+							$gampleman$elm_mapbox$Mapbox$Expression$bottom,
+							_List_fromArray(
+								[
+									_Utils_Tuple2(8, $gampleman$elm_mapbox$Mapbox$Expression$center)
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textField(
+						$gampleman$elm_mapbox$Mapbox$Expression$toFormattedText(
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('name_en')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textMaxWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(7)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textSize(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									7,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(11.5)),
+									_Utils_Tuple2(
+									15,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(20))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$symbol,
+				'place-island',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('place_label'),
+						$gampleman$elm_mapbox$Mapbox$Layer$maxzoom(16),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						A2(
+							$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+							$gampleman$elm_mapbox$Mapbox$Expression$str('island'),
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('type')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 63, 71, 115, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textLineHeight(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1.2)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textSize(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									10,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(11)),
+									_Utils_Tuple2(
+									18,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(16))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textMaxAngle(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(38)),
+						$gampleman$elm_mapbox$Mapbox$Layer$symbolSpacing(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(250)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textFont(
+						$gampleman$elm_mapbox$Mapbox$Expression$strings(
+							_List_fromArray(
+								['DIN Offc Pro Regular', 'Arial Unicode MS Regular']))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textPadding(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(2)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textOffset(
+						$gampleman$elm_mapbox$Mapbox$Expression$floats(
+							_List_fromArray(
+								[0, 0]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textRotationAlignment($gampleman$elm_mapbox$Mapbox$Expression$viewport),
+						$gampleman$elm_mapbox$Mapbox$Layer$textField(
+						$gampleman$elm_mapbox$Mapbox$Expression$toFormattedText(
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('name_en')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textLetterSpacing(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.01)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textMaxWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(7))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$symbol,
+				'place-city-sm',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('place_label'),
+						$gampleman$elm_mapbox$Mapbox$Layer$maxzoom(14),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A3(
+									$gampleman$elm_mapbox$Mapbox$Expression$matchesFloat,
+									_List_fromArray(
+										[
+											_Utils_Tuple2(0, $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2(1, $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2(2, $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2(3, $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2(4, $gampleman$elm_mapbox$Mapbox$Expression$false),
+											_Utils_Tuple2(5, $gampleman$elm_mapbox$Mapbox$Expression$false)
+										]),
+									$gampleman$elm_mapbox$Mapbox$Expression$true,
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('scalerank'))),
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('city'),
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('type')))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 0, 0, 0, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1.25)),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									7.99,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+									_Utils_Tuple2(
+									8,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textSize(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									6,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(12)),
+									_Utils_Tuple2(
+									14,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(22))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconImage(
+						$gampleman$elm_mapbox$Mapbox$Expression$str('dot-9')),
+						$gampleman$elm_mapbox$Mapbox$Layer$textFont(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$step,
+							$gampleman$elm_mapbox$Mapbox$Expression$strings(
+								_List_fromArray(
+									['DIN Offc Pro Regular', 'Arial Unicode MS Regular'])),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									8,
+									$gampleman$elm_mapbox$Mapbox$Expression$strings(
+										_List_fromArray(
+											['DIN Offc Pro Medium', 'Arial Unicode MS Regular'])))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textOffset(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									7.99,
+									$gampleman$elm_mapbox$Mapbox$Expression$floats(
+										_List_fromArray(
+											[0, -0.2]))),
+									_Utils_Tuple2(
+									8,
+									$gampleman$elm_mapbox$Mapbox$Expression$floats(
+										_List_fromArray(
+											[0, 0])))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textAnchor(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$step,
+							$gampleman$elm_mapbox$Mapbox$Expression$bottom,
+							_List_fromArray(
+								[
+									_Utils_Tuple2(8, $gampleman$elm_mapbox$Mapbox$Expression$center)
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textField(
+						$gampleman$elm_mapbox$Mapbox$Expression$toFormattedText(
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('name_en')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textMaxWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(7))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$symbol,
+				'place-city-md-s',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('place_label'),
+						$gampleman$elm_mapbox$Mapbox$Layer$maxzoom(14),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A3(
+									$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+									_List_fromArray(
+										[
+											_Utils_Tuple2('E', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('S', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('SE', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('SW', $gampleman$elm_mapbox$Mapbox$Expression$true)
+										]),
+									$gampleman$elm_mapbox$Mapbox$Expression$false,
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('ldir'))),
+									A3(
+									$gampleman$elm_mapbox$Mapbox$Expression$matchesFloat,
+									_List_fromArray(
+										[
+											_Utils_Tuple2(3, $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2(4, $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2(5, $gampleman$elm_mapbox$Mapbox$Expression$true)
+										]),
+									$gampleman$elm_mapbox$Mapbox$Expression$false,
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('scalerank'))),
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('city'),
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('type')))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 0, 0, 0, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloBlur(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									7.99,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+									_Utils_Tuple2(
+									8,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textField(
+						$gampleman$elm_mapbox$Mapbox$Expression$toFormattedText(
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('name_en')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconImage(
+						$gampleman$elm_mapbox$Mapbox$Expression$str('dot-10')),
+						$gampleman$elm_mapbox$Mapbox$Layer$textAnchor(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$step,
+							$gampleman$elm_mapbox$Mapbox$Expression$top,
+							_List_fromArray(
+								[
+									_Utils_Tuple2(8, $gampleman$elm_mapbox$Mapbox$Expression$center)
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textOffset(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									7.99,
+									$gampleman$elm_mapbox$Mapbox$Expression$floats(
+										_List_fromArray(
+											[0, 0.1]))),
+									_Utils_Tuple2(
+									8,
+									$gampleman$elm_mapbox$Mapbox$Expression$floats(
+										_List_fromArray(
+											[0, 0])))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textFont(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$step,
+							$gampleman$elm_mapbox$Mapbox$Expression$strings(
+								_List_fromArray(
+									['DIN Offc Pro Regular', 'Arial Unicode MS Regular'])),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									8,
+									$gampleman$elm_mapbox$Mapbox$Expression$strings(
+										_List_fromArray(
+											['DIN Offc Pro Medium', 'Arial Unicode MS Regular'])))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textSize(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(0.9),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(12)),
+									_Utils_Tuple2(
+									12,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(22))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$symbol,
+				'place-city-md-n',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('place_label'),
+						$gampleman$elm_mapbox$Mapbox$Layer$maxzoom(14),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A3(
+									$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+									_List_fromArray(
+										[
+											_Utils_Tuple2('N', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('NE', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('NW', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('W', $gampleman$elm_mapbox$Mapbox$Expression$true)
+										]),
+									$gampleman$elm_mapbox$Mapbox$Expression$false,
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('ldir'))),
+									A3(
+									$gampleman$elm_mapbox$Mapbox$Expression$matchesFloat,
+									_List_fromArray(
+										[
+											_Utils_Tuple2(3, $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2(4, $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2(5, $gampleman$elm_mapbox$Mapbox$Expression$true)
+										]),
+									$gampleman$elm_mapbox$Mapbox$Expression$false,
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('scalerank'))),
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('city'),
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('type')))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 0, 0, 0, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									7.99,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+									_Utils_Tuple2(
+									8,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloBlur(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconImage(
+						$gampleman$elm_mapbox$Mapbox$Expression$str('dot-10')),
+						$gampleman$elm_mapbox$Mapbox$Layer$textFont(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$step,
+							$gampleman$elm_mapbox$Mapbox$Expression$strings(
+								_List_fromArray(
+									['DIN Offc Pro Regular', 'Arial Unicode MS Regular'])),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									8,
+									$gampleman$elm_mapbox$Mapbox$Expression$strings(
+										_List_fromArray(
+											['DIN Offc Pro Medium', 'Arial Unicode MS Regular'])))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textOffset(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									7.99,
+									$gampleman$elm_mapbox$Mapbox$Expression$floats(
+										_List_fromArray(
+											[0, -0.25]))),
+									_Utils_Tuple2(
+									8,
+									$gampleman$elm_mapbox$Mapbox$Expression$floats(
+										_List_fromArray(
+											[0, 0])))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textAnchor(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$step,
+							$gampleman$elm_mapbox$Mapbox$Expression$bottom,
+							_List_fromArray(
+								[
+									_Utils_Tuple2(8, $gampleman$elm_mapbox$Mapbox$Expression$center)
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textField(
+						$gampleman$elm_mapbox$Mapbox$Expression$toFormattedText(
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('name_en')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textMaxWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(7)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textSize(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(0.9),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(12)),
+									_Utils_Tuple2(
+									12,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(22))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$symbol,
+				'place-city-lg-s',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('place_label'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(1),
+						$gampleman$elm_mapbox$Mapbox$Layer$maxzoom(14),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A3(
+									$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+									_List_fromArray(
+										[
+											_Utils_Tuple2('E', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('S', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('SE', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('SW', $gampleman$elm_mapbox$Mapbox$Expression$true)
+										]),
+									$gampleman$elm_mapbox$Mapbox$Expression$false,
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('ldir'))),
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$lessThanOrEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2),
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('scalerank'))),
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('city'),
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('type')))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 0, 0, 0, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									7.99,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+									_Utils_Tuple2(
+									8,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloBlur(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconImage(
+						$gampleman$elm_mapbox$Mapbox$Expression$str('dot-11')),
+						$gampleman$elm_mapbox$Mapbox$Layer$textFont(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$step,
+							$gampleman$elm_mapbox$Mapbox$Expression$strings(
+								_List_fromArray(
+									['DIN Offc Pro Regular', 'Arial Unicode MS Regular'])),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									8,
+									$gampleman$elm_mapbox$Mapbox$Expression$strings(
+										_List_fromArray(
+											['DIN Offc Pro Medium', 'Arial Unicode MS Regular'])))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textOffset(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									7.99,
+									$gampleman$elm_mapbox$Mapbox$Expression$floats(
+										_List_fromArray(
+											[0, 0.15]))),
+									_Utils_Tuple2(
+									8,
+									$gampleman$elm_mapbox$Mapbox$Expression$floats(
+										_List_fromArray(
+											[0, 0])))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textAnchor(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$step,
+							$gampleman$elm_mapbox$Mapbox$Expression$top,
+							_List_fromArray(
+								[
+									_Utils_Tuple2(8, $gampleman$elm_mapbox$Mapbox$Expression$center)
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textField(
+						$gampleman$elm_mapbox$Mapbox$Expression$toFormattedText(
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('name_en')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textMaxWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(7)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textSize(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(0.9),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									4,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(12)),
+									_Utils_Tuple2(
+									10,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(22))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$symbol,
+				'place-city-lg-n',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('place_label'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(1),
+						$gampleman$elm_mapbox$Mapbox$Layer$maxzoom(14),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A3(
+									$gampleman$elm_mapbox$Mapbox$Expression$matchesStr,
+									_List_fromArray(
+										[
+											_Utils_Tuple2('N', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('NE', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('NW', $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2('W', $gampleman$elm_mapbox$Mapbox$Expression$true)
+										]),
+									$gampleman$elm_mapbox$Mapbox$Expression$false,
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('ldir'))),
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$lessThanOrEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(2),
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('scalerank'))),
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('city'),
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('type')))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 0, 0, 0, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textOpacity(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconOpacity(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									7.99,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+									_Utils_Tuple2(
+									8,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(0))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloBlur(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$iconImage(
+						$gampleman$elm_mapbox$Mapbox$Expression$str('dot-11')),
+						$gampleman$elm_mapbox$Mapbox$Layer$textFont(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$step,
+							$gampleman$elm_mapbox$Mapbox$Expression$strings(
+								_List_fromArray(
+									['DIN Offc Pro Regular', 'Arial Unicode MS Regular'])),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									8,
+									$gampleman$elm_mapbox$Mapbox$Expression$strings(
+										_List_fromArray(
+											['DIN Offc Pro Medium', 'Arial Unicode MS Regular'])))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textOffset(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									7.99,
+									$gampleman$elm_mapbox$Mapbox$Expression$floats(
+										_List_fromArray(
+											[0, -0.25]))),
+									_Utils_Tuple2(
+									8,
+									$gampleman$elm_mapbox$Mapbox$Expression$floats(
+										_List_fromArray(
+											[0, 0])))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textAnchor(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$step,
+							$gampleman$elm_mapbox$Mapbox$Expression$bottom,
+							_List_fromArray(
+								[
+									_Utils_Tuple2(8, $gampleman$elm_mapbox$Mapbox$Expression$center)
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textField(
+						$gampleman$elm_mapbox$Mapbox$Expression$toFormattedText(
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('name_en')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textMaxWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(7)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textSize(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(0.9),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									4,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(12)),
+									_Utils_Tuple2(
+									10,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(22))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$symbol,
+				'marine-label-sm-ln',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('marine_label'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(3),
+						$gampleman$elm_mapbox$Mapbox$Layer$maxzoom(10),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$greaterThanOrEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(4),
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('labelrank')))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 199, 228, 249, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textLineHeight(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1.1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textSize(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									3,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(12)),
+									_Utils_Tuple2(
+									6,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(16))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$symbolSpacing(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									4,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(100)),
+									_Utils_Tuple2(
+									6,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(400))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textFont(
+						$gampleman$elm_mapbox$Mapbox$Expression$strings(
+							_List_fromArray(
+								['DIN Offc Pro Italic', 'Arial Unicode MS Regular']))),
+						$gampleman$elm_mapbox$Mapbox$Layer$symbolPlacement($gampleman$elm_mapbox$Mapbox$Expression$line),
+						$gampleman$elm_mapbox$Mapbox$Layer$textField(
+						$gampleman$elm_mapbox$Mapbox$Expression$toFormattedText(
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('name_en')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textLetterSpacing(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textMaxWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(5))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$symbol,
+				'marine-label-sm-pt',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('marine_label'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(3),
+						$gampleman$elm_mapbox$Mapbox$Layer$maxzoom(10),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('Point'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$greaterThanOrEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(4),
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('labelrank')))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 199, 228, 249, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textField(
+						$gampleman$elm_mapbox$Mapbox$Expression$toFormattedText(
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('name_en')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textMaxWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(5)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textLetterSpacing(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textLineHeight(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1.5)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textFont(
+						$gampleman$elm_mapbox$Mapbox$Expression$strings(
+							_List_fromArray(
+								['DIN Offc Pro Italic', 'Arial Unicode MS Regular']))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textSize(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									3,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(12)),
+									_Utils_Tuple2(
+									6,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(16))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$symbol,
+				'marine-label-md-ln',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('marine_label'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(2),
+						$gampleman$elm_mapbox$Mapbox$Layer$maxzoom(8),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									A3(
+									$gampleman$elm_mapbox$Mapbox$Expression$matchesFloat,
+									_List_fromArray(
+										[
+											_Utils_Tuple2(2, $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2(3, $gampleman$elm_mapbox$Mapbox$Expression$true)
+										]),
+									$gampleman$elm_mapbox$Mapbox$Expression$false,
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('labelrank')))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 199, 228, 249, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textLineHeight(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1.1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textSize(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									2,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(12)),
+									_Utils_Tuple2(
+									5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(20))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$symbolSpacing(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(250)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textFont(
+						$gampleman$elm_mapbox$Mapbox$Expression$strings(
+							_List_fromArray(
+								['DIN Offc Pro Italic', 'Arial Unicode MS Regular']))),
+						$gampleman$elm_mapbox$Mapbox$Layer$symbolPlacement($gampleman$elm_mapbox$Mapbox$Expression$line),
+						$gampleman$elm_mapbox$Mapbox$Layer$textField(
+						$gampleman$elm_mapbox$Mapbox$Expression$toFormattedText(
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('name_en')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textLetterSpacing(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.15)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textMaxWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(5))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$symbol,
+				'marine-label-md-pt',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('marine_label'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(2),
+						$gampleman$elm_mapbox$Mapbox$Layer$maxzoom(8),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('Point'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									A3(
+									$gampleman$elm_mapbox$Mapbox$Expression$matchesFloat,
+									_List_fromArray(
+										[
+											_Utils_Tuple2(2, $gampleman$elm_mapbox$Mapbox$Expression$true),
+											_Utils_Tuple2(3, $gampleman$elm_mapbox$Mapbox$Expression$true)
+										]),
+									$gampleman$elm_mapbox$Mapbox$Expression$false,
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('labelrank')))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 199, 228, 249, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textField(
+						$gampleman$elm_mapbox$Mapbox$Expression$toFormattedText(
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('name_en')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textMaxWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(5)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textLetterSpacing(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.15)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textLineHeight(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1.5)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textFont(
+						$gampleman$elm_mapbox$Mapbox$Expression$strings(
+							_List_fromArray(
+								['DIN Offc Pro Italic', 'Arial Unicode MS Regular']))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textSize(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1.1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									2,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(14)),
+									_Utils_Tuple2(
+									5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(20))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$symbol,
+				'marine-label-lg-ln',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('marine_label'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(1),
+						$gampleman$elm_mapbox$Mapbox$Layer$maxzoom(4),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('LineString'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1),
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('labelrank')))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 199, 228, 249, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textField(
+						$gampleman$elm_mapbox$Mapbox$Expression$toFormattedText(
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('name_en')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textMaxWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(4)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textLetterSpacing(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.25)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textLineHeight(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1.1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$symbolPlacement($gampleman$elm_mapbox$Mapbox$Expression$line),
+						$gampleman$elm_mapbox$Mapbox$Layer$textFont(
+						$gampleman$elm_mapbox$Mapbox$Expression$strings(
+							_List_fromArray(
+								['DIN Offc Pro Italic', 'Arial Unicode MS Regular']))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textSize(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									1,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(14)),
+									_Utils_Tuple2(
+									4,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(30))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$symbol,
+				'marine-label-lg-pt',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('marine_label'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(1),
+						$gampleman$elm_mapbox$Mapbox$Layer$maxzoom(4),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$str('Point'),
+									$gampleman$elm_mapbox$Mapbox$Expression$geometryType),
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$isEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(1),
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('labelrank')))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 199, 228, 249, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textField(
+						$gampleman$elm_mapbox$Mapbox$Expression$toFormattedText(
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('name_en')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textMaxWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(4)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textLetterSpacing(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.25)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textLineHeight(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1.5)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textFont(
+						$gampleman$elm_mapbox$Mapbox$Expression$strings(
+							_List_fromArray(
+								['DIN Offc Pro Italic', 'Arial Unicode MS Regular']))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textSize(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									1,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(14)),
+									_Utils_Tuple2(
+									4,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(30))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$symbol,
+				'state-label-sm',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('state_label'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(3),
+						$gampleman$elm_mapbox$Mapbox$Layer$maxzoom(9),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						A2(
+							$gampleman$elm_mapbox$Mapbox$Expression$lessThan,
+							$gampleman$elm_mapbox$Mapbox$Expression$float(20000),
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('area')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textOpacity(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 0, 0, 0, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textSize(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									6,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(10)),
+									_Utils_Tuple2(
+									9,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(14))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textTransform($gampleman$elm_mapbox$Mapbox$Expression$uppercase),
+						$gampleman$elm_mapbox$Mapbox$Layer$textFont(
+						$gampleman$elm_mapbox$Mapbox$Expression$strings(
+							_List_fromArray(
+								['DIN Offc Pro Bold', 'Arial Unicode MS Bold']))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textField(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$step,
+							$gampleman$elm_mapbox$Mapbox$Expression$toFormattedText(
+								$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+									$gampleman$elm_mapbox$Mapbox$Expression$str('abbr'))),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									6,
+									$gampleman$elm_mapbox$Mapbox$Expression$toFormattedText(
+										$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+											$gampleman$elm_mapbox$Mapbox$Expression$str('name_en'))))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textLetterSpacing(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.15)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textMaxWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(5))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$symbol,
+				'state-label-md',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('state_label'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(3),
+						$gampleman$elm_mapbox$Mapbox$Layer$maxzoom(8),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						$gampleman$elm_mapbox$Mapbox$Expression$all(
+							_List_fromArray(
+								[
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$lessThan,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(80000),
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('area'))),
+									A2(
+									$gampleman$elm_mapbox$Mapbox$Expression$greaterThanOrEqual,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(20000),
+									$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+										$gampleman$elm_mapbox$Mapbox$Expression$str('area')))
+								]))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textOpacity(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 0, 0, 0, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textSize(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(10)),
+									_Utils_Tuple2(
+									8,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(16))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textTransform($gampleman$elm_mapbox$Mapbox$Expression$uppercase),
+						$gampleman$elm_mapbox$Mapbox$Layer$textFont(
+						$gampleman$elm_mapbox$Mapbox$Expression$strings(
+							_List_fromArray(
+								['DIN Offc Pro Bold', 'Arial Unicode MS Bold']))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textField(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$step,
+							$gampleman$elm_mapbox$Mapbox$Expression$toFormattedText(
+								$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+									$gampleman$elm_mapbox$Mapbox$Expression$str('abbr'))),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									5,
+									$gampleman$elm_mapbox$Mapbox$Expression$toFormattedText(
+										$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+											$gampleman$elm_mapbox$Mapbox$Expression$str('name_en'))))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textLetterSpacing(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.15)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textMaxWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(6))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$symbol,
+				'state-label-lg',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('state_label'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(3),
+						$gampleman$elm_mapbox$Mapbox$Layer$maxzoom(7),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						A2(
+							$gampleman$elm_mapbox$Mapbox$Expression$greaterThanOrEqual,
+							$gampleman$elm_mapbox$Mapbox$Expression$float(80000),
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('area')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textOpacity(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 0, 0, 0, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textSize(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									4,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(10)),
+									_Utils_Tuple2(
+									7,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(18))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textTransform($gampleman$elm_mapbox$Mapbox$Expression$uppercase),
+						$gampleman$elm_mapbox$Mapbox$Layer$textFont(
+						$gampleman$elm_mapbox$Mapbox$Expression$strings(
+							_List_fromArray(
+								['DIN Offc Pro Bold', 'Arial Unicode MS Bold']))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textPadding(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textField(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$step,
+							$gampleman$elm_mapbox$Mapbox$Expression$toFormattedText(
+								$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+									$gampleman$elm_mapbox$Mapbox$Expression$str('abbr'))),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									4,
+									$gampleman$elm_mapbox$Mapbox$Expression$toFormattedText(
+										$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+											$gampleman$elm_mapbox$Mapbox$Expression$str('name_en'))))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textLetterSpacing(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(0.15)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textMaxWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(6))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$symbol,
+				'country-label-sm',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('country_label'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(1),
+						$gampleman$elm_mapbox$Mapbox$Layer$maxzoom(10),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						A2(
+							$gampleman$elm_mapbox$Mapbox$Expression$greaterThanOrEqual,
+							$gampleman$elm_mapbox$Mapbox$Expression$float(5),
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('scalerank')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 0, 0, 0, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloColor(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									2,
+									A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 0.75)),
+									_Utils_Tuple2(
+									3,
+									A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1.25)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textField(
+						$gampleman$elm_mapbox$Mapbox$Expression$toFormattedText(
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('name_en')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textMaxWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(6)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textFont(
+						$gampleman$elm_mapbox$Mapbox$Expression$strings(
+							_List_fromArray(
+								['DIN Offc Pro Medium', 'Arial Unicode MS Regular']))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textSize(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(0.9),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									5,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(14)),
+									_Utils_Tuple2(
+									9,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(22))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$symbol,
+				'country-label-md',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('country_label'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(1),
+						$gampleman$elm_mapbox$Mapbox$Layer$maxzoom(8),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$matchesFloat,
+							_List_fromArray(
+								[
+									_Utils_Tuple2(3, $gampleman$elm_mapbox$Mapbox$Expression$true),
+									_Utils_Tuple2(4, $gampleman$elm_mapbox$Mapbox$Expression$true)
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$false,
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('scalerank')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 0, 0, 0, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloColor(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									2,
+									A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 0.75)),
+									_Utils_Tuple2(
+									3,
+									A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1.25)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textField(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$step,
+							$gampleman$elm_mapbox$Mapbox$Expression$toFormattedText(
+								$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+									$gampleman$elm_mapbox$Mapbox$Expression$str('code'))),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									2,
+									$gampleman$elm_mapbox$Mapbox$Expression$toFormattedText(
+										$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+											$gampleman$elm_mapbox$Mapbox$Expression$str('name_en'))))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textMaxWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(6)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textFont(
+						$gampleman$elm_mapbox$Mapbox$Expression$strings(
+							_List_fromArray(
+								['DIN Offc Pro Medium', 'Arial Unicode MS Regular']))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textSize(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									3,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(10)),
+									_Utils_Tuple2(
+									8,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(24))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom))
+					])),
+				A3(
+				$gampleman$elm_mapbox$Mapbox$Layer$symbol,
+				'country-label-lg',
+				'composite',
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Layer$sourceLayer('country_label'),
+						$gampleman$elm_mapbox$Mapbox$Layer$minzoom(1),
+						$gampleman$elm_mapbox$Mapbox$Layer$maxzoom(7),
+						$gampleman$elm_mapbox$Mapbox$Layer$filter(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$matchesFloat,
+							_List_fromArray(
+								[
+									_Utils_Tuple2(1, $gampleman$elm_mapbox$Mapbox$Expression$true),
+									_Utils_Tuple2(2, $gampleman$elm_mapbox$Mapbox$Expression$true)
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$false,
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('scalerank')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textColor(
+						A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 0, 0, 0, 1)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloColor(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									2,
+									A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 0.75)),
+									_Utils_Tuple2(
+									3,
+									A4($gampleman$elm_mapbox$Mapbox$Expression$rgba, 255, 255, 255, 1))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textHaloWidth(
+						$gampleman$elm_mapbox$Mapbox$Expression$float(1.25)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textField(
+						$gampleman$elm_mapbox$Mapbox$Expression$toFormattedText(
+							$gampleman$elm_mapbox$Mapbox$Expression$getProperty(
+								$gampleman$elm_mapbox$Mapbox$Expression$str('name_en')))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textMaxWidth(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									0,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(5)),
+									_Utils_Tuple2(
+									3,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(6))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom)),
+						$gampleman$elm_mapbox$Mapbox$Layer$textFont(
+						$gampleman$elm_mapbox$Mapbox$Expression$strings(
+							_List_fromArray(
+								['DIN Offc Pro Medium', 'Arial Unicode MS Regular']))),
+						$gampleman$elm_mapbox$Mapbox$Layer$textSize(
+						A3(
+							$gampleman$elm_mapbox$Mapbox$Expression$interpolate,
+							$gampleman$elm_mapbox$Mapbox$Expression$Exponential(1),
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									1,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(10)),
+									_Utils_Tuple2(
+									6,
+									$gampleman$elm_mapbox$Mapbox$Expression$float(24))
+								]),
+							$gampleman$elm_mapbox$Mapbox$Expression$zoom))
+					]))
+			]),
+		light: $gampleman$elm_mapbox$Mapbox$Style$defaultLight,
+		misc: _List_fromArray(
+			[
+				$gampleman$elm_mapbox$Mapbox$Style$sprite('mapbox://sprites/mapbox/outdoors-v9'),
+				$gampleman$elm_mapbox$Mapbox$Style$glyphs('mapbox://fonts/mapbox/{fontstack}/{range}.pbf'),
+				$gampleman$elm_mapbox$Mapbox$Style$name('Mapbox Outdoors'),
+				$gampleman$elm_mapbox$Mapbox$Style$defaultCenter(
+				A2($gampleman$elm_mapbox$LngLat$LngLat, 6.865575, 45.832119)),
+				$gampleman$elm_mapbox$Mapbox$Style$defaultZoomLevel(15)
+			]),
+		sources: _List_fromArray(
+			[
+				A2($gampleman$elm_mapbox$Mapbox$Source$vectorFromUrl, 'composite', 'mapbox://mapbox.mapbox-terrain-v2,mapbox.mapbox-streets-v7'),
+				A3($gampleman$elm_mapbox$Mapbox$Source$geoJSONFromValue, 'changes', _List_Nil, $author$project$Styles$Outdoors$geojson)
+			]),
+		transition: $gampleman$elm_mapbox$Mapbox$Style$defaultTransition
+	});
+var $author$project$Main$viewBack2 = A2(
+	$rtfeldman$elm_css$Html$Styled$div,
+	_List_fromArray(
+		[
+			$rtfeldman$elm_css$Html$Styled$Attributes$css(
+			_List_fromArray(
+				[
+					$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$relative,
+					$matheus23$elm_default_tailwind_modules$Tailwind$Breakpoints$md(
+					_List_fromArray(
+						[
+							$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$absolute,
+							$rtfeldman$elm_css$Css$left(
+							$rtfeldman$elm_css$Css$px(-50)),
+							$rtfeldman$elm_css$Css$top(
+							$rtfeldman$elm_css$Css$px(0))
+						])),
+					$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$h_full,
+					$rtfeldman$elm_css$Css$after(
+					_List_fromArray(
+						[
+							A2($rtfeldman$elm_css$Css$property, 'content', '\'\''),
+							$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$absolute,
+							$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$inset_0,
+							$rtfeldman$elm_css$Css$height(
+							$rtfeldman$elm_css$Css$px(1)),
+							$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$w_full,
+							$matheus23$elm_default_tailwind_modules$Tailwind$Breakpoints$md(
+							_List_fromArray(
+								[
+									$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$h_full,
+									$rtfeldman$elm_css$Css$width(
+									$rtfeldman$elm_css$Css$px(1)),
+									$rtfeldman$elm_css$Css$right(
+									$rtfeldman$elm_css$Css$px(-28)),
+									$rtfeldman$elm_css$Css$left($rtfeldman$elm_css$Css$auto)
+								])),
+							$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$bg_gray_300,
+							$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$mx_auto
+						]))
+				]))
+		]),
+	_List_fromArray(
+		[
+			A2(
+			$rtfeldman$elm_css$Html$Styled$button,
+			_List_fromArray(
+				[
+					$rtfeldman$elm_css$Html$Styled$Attributes$css(
+					_List_fromArray(
+						[
+							$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$absolute,
+							$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$inset_0,
+							$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$m_auto,
+							$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$rounded_full,
+							$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$font_bold,
+							$rtfeldman$elm_css$Css$height(
+							$rtfeldman$elm_css$Css$px(36)),
+							$rtfeldman$elm_css$Css$width(
+							$rtfeldman$elm_css$Css$px(36)),
+							$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$flex,
+							$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$justify_center,
+							$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$items_center,
+							$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$bg_white,
+							$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$z_10,
+							$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$cursor_pointer,
+							$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$transform,
+							$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$rotate_90,
+							$matheus23$elm_default_tailwind_modules$Tailwind$Breakpoints$md(
+							_List_fromArray(
+								[$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$rotate_0]))
+						])),
+					$rtfeldman$elm_css$Html$Styled$Attributes$title('Back to Home'),
+					$rtfeldman$elm_css$Html$Styled$Events$onClick(
+					$author$project$Main$OpenView($author$project$Main$MainView))
+				]),
+			_List_fromArray(
+				[$author$project$Icon$iconChevronLeft]))
+		]));
+var $author$project$Main$viewExploreContent = function (model) {
+	return A2(
+		$elm$html$Html$div,
+		_List_fromArray(
+			[
+				A2($elm$html$Html$Attributes$style, 'width', '100vw'),
+				A2($elm$html$Html$Attributes$style, 'height', '100vh')
+			]),
+		_List_fromArray(
+			[
+				A2(
+				$gampleman$elm_mapbox$Mapbox$Element$map,
+				_List_fromArray(
+					[
+						$gampleman$elm_mapbox$Mapbox$Element$maxZoom(15),
+						$gampleman$elm_mapbox$Mapbox$Element$onMouseMove($author$project$Main$Hover),
+						$gampleman$elm_mapbox$Mapbox$Element$onClick($author$project$Main$MapClick),
+						$gampleman$elm_mapbox$Mapbox$Element$id('my-map'),
+						$gampleman$elm_mapbox$Mapbox$Element$eventFeaturesLayers(
+						_List_fromArray(
+							['changes'])),
+						$author$project$Main$hoveredFeatures(model.features)
+					]),
+				$author$project$Styles$Outdoors$style),
+				A2(
+				$elm$html$Html$div,
+				_List_fromArray(
+					[
+						A2($elm$html$Html$Attributes$style, 'position', 'absolute'),
+						A2($elm$html$Html$Attributes$style, 'top', '40px'),
+						A2($elm$html$Html$Attributes$style, 'left', '75px')
+					]),
+				_List_fromArray(
+					[
+						A2(
+						$elm$html$Html$div,
+						_List_fromArray(
+							[
+								A2($elm$html$Html$Attributes$style, 'display', 'flex'),
+								A2($elm$html$Html$Attributes$style, 'width', '180px'),
+								A2($elm$html$Html$Attributes$style, 'flex-direction', 'row')
+							]),
+						_List_fromArray(
+							[
+								$rtfeldman$elm_css$Html$Styled$toUnstyled($author$project$Main$viewBack2),
+								$rtfeldman$elm_css$Html$Styled$toUnstyled(
+								A2(
+									$rtfeldman$elm_css$Html$Styled$div,
+									_List_fromArray(
+										[
+											$rtfeldman$elm_css$Html$Styled$Attributes$css(
+											_List_fromArray(
+												[$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$text_2xl, $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$font_bold]))
+										]),
+									$author$project$Util$htmlAddedBrFromString('Explore')))
+							]))
+					]))
+			]));
+};
+var $author$project$Main$AddView = {$: 'AddView'};
+var $author$project$Main$ExploreView = {$: 'ExploreView'};
+var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$gap_0 = A2($rtfeldman$elm_css$Css$property, 'gap', '0px');
+var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$gap_6 = A2($rtfeldman$elm_css$Css$property, 'gap', '1.5rem');
+var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$grid_cols_2 = A2($rtfeldman$elm_css$Css$property, 'grid-template-columns', 'repeat(2, minmax(0, 1fr))');
+var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$mt_6 = A2($rtfeldman$elm_css$Css$property, 'margin-top', '1.5rem');
 var $rtfeldman$elm_css$Html$Styled$p = $rtfeldman$elm_css$Html$Styled$node('p');
-var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$p_10 = A2($rtfeldman$elm_css$Css$property, 'padding', '2.5rem');
-var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$relative = A2($rtfeldman$elm_css$Css$property, 'position', 'relative');
-var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$text_center = A2($rtfeldman$elm_css$Css$property, 'text-align', 'center');
 var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$text_gray_400 = $rtfeldman$elm_css$Css$batch(
 	_List_fromArray(
 		[
@@ -14070,39 +31071,6 @@ var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$text_xs = $rtfeld
 			A2($rtfeldman$elm_css$Css$property, 'font-size', '0.75rem'),
 			A2($rtfeldman$elm_css$Css$property, 'line-height', '1rem')
 		]));
-var $rtfeldman$elm_css$Css$Structure$PseudoElement = function (a) {
-	return {$: 'PseudoElement', a: a};
-};
-var $rtfeldman$elm_css$Css$Preprocess$WithPseudoElement = F2(
-	function (a, b) {
-		return {$: 'WithPseudoElement', a: a, b: b};
-	});
-var $rtfeldman$elm_css$Css$pseudoElement = function (element) {
-	return $rtfeldman$elm_css$Css$Preprocess$WithPseudoElement(
-		$rtfeldman$elm_css$Css$Structure$PseudoElement(element));
-};
-var $rtfeldman$elm_css$Css$after = $rtfeldman$elm_css$Css$pseudoElement('after');
-var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$bg_gray_300 = $rtfeldman$elm_css$Css$batch(
-	_List_fromArray(
-		[
-			A2($rtfeldman$elm_css$Css$property, '--tw-bg-opacity', '1'),
-			A2($rtfeldman$elm_css$Css$property, 'background-color', 'rgba(209, 213, 219, var(--tw-bg-opacity))')
-		]));
-var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$font_bold = A2($rtfeldman$elm_css$Css$property, 'font-weight', '700');
-var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$h_full = A2($rtfeldman$elm_css$Css$property, 'height', '100%');
-var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$inset_0 = $rtfeldman$elm_css$Css$batch(
-	_List_fromArray(
-		[
-			A2($rtfeldman$elm_css$Css$property, 'top', '0px'),
-			A2($rtfeldman$elm_css$Css$property, 'right', '0px'),
-			A2($rtfeldman$elm_css$Css$property, 'bottom', '0px'),
-			A2($rtfeldman$elm_css$Css$property, 'left', '0px')
-		]));
-var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$items_center = A2($rtfeldman$elm_css$Css$property, 'align-items', 'center');
-var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$justify_center = A2($rtfeldman$elm_css$Css$property, 'justify-content', 'center');
-var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$m_auto = A2($rtfeldman$elm_css$Css$property, 'margin', 'auto');
-var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$rounded_full = A2($rtfeldman$elm_css$Css$property, 'border-radius', '9999px');
-var $rtfeldman$elm_css$Css$width = $rtfeldman$elm_css$Css$prop1('width');
 var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$z_30 = A2($rtfeldman$elm_css$Css$property, 'z-index', '30');
 var $author$project$Main$viewOr = A2(
 	$rtfeldman$elm_css$Html$Styled$div,
@@ -14171,24 +31139,6 @@ var $author$project$Main$viewOr = A2(
 					$rtfeldman$elm_css$Html$Styled$text('OR')
 				]))
 		]));
-var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$text_2xl = $rtfeldman$elm_css$Css$batch(
-	_List_fromArray(
-		[
-			A2($rtfeldman$elm_css$Css$property, 'font-size', '1.5rem'),
-			A2($rtfeldman$elm_css$Css$property, 'line-height', '2rem')
-		]));
-var $author$project$Main$viewTitle = function (t) {
-	return A2(
-		$rtfeldman$elm_css$Html$Styled$div,
-		_List_fromArray(
-			[
-				$rtfeldman$elm_css$Html$Styled$Attributes$css(
-				_List_fromArray(
-					[$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$text_2xl, $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$font_bold]))
-			]),
-		$author$project$Util$htmlAddedBrFromString(t));
-};
-var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$z_20 = A2($rtfeldman$elm_css$Css$property, 'z-index', '20');
 var $author$project$Main$viewStartContent = A2(
 	$rtfeldman$elm_css$Html$Styled$div,
 	_List_fromArray(
@@ -14242,7 +31192,11 @@ var $author$project$Main$viewStartContent = A2(
 						[
 							A2(
 							$author$project$Util$btnGreen,
-							_List_Nil,
+							_List_fromArray(
+								[
+									$rtfeldman$elm_css$Html$Styled$Events$onClick(
+									$author$project$Main$OpenView($author$project$Main$AddView))
+								]),
 							_List_fromArray(
 								[
 									$rtfeldman$elm_css$Html$Styled$text('Add')
@@ -14258,7 +31212,7 @@ var $author$project$Main$viewStartContent = A2(
 						]),
 					_List_fromArray(
 						[
-							$rtfeldman$elm_css$Html$Styled$text('Recommended browsers: Google Chrome, Microsoft Edge')
+							$rtfeldman$elm_css$Html$Styled$text('Recommended browsers: Google Chrome, Microsoft Edge, Brave')
 						]))
 				])),
 			$author$project$Main$viewOr,
@@ -14298,7 +31252,11 @@ var $author$project$Main$viewStartContent = A2(
 						[
 							A2(
 							$author$project$Util$btnGreen,
-							_List_Nil,
+							_List_fromArray(
+								[
+									$rtfeldman$elm_css$Html$Styled$Events$onClick(
+									$author$project$Main$OpenView($author$project$Main$ExploreView))
+								]),
 							_List_fromArray(
 								[
 									$rtfeldman$elm_css$Html$Styled$text('View')
@@ -14318,6 +31276,434 @@ var $author$project$Main$viewStartContent = A2(
 						]))
 				]))
 		]));
+var $author$project$Main$CloseWalletModal = {$: 'CloseWalletModal'};
+var $author$project$Main$RedirectToExplorer = function (a) {
+	return {$: 'RedirectToExplorer', a: a};
+};
+var $author$project$Main$Web3Disconnect = {$: 'Web3Disconnect'};
+var $rtfeldman$elm_css$Css$baseline = $rtfeldman$elm_css$Css$prop1('baseline');
+var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$bg_blue_100 = $rtfeldman$elm_css$Css$batch(
+	_List_fromArray(
+		[
+			A2($rtfeldman$elm_css$Css$property, '--tw-bg-opacity', '1'),
+			A2($rtfeldman$elm_css$Css$property, 'background-color', 'rgba(219, 234, 254, var(--tw-bg-opacity))')
+		]));
+var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$bg_blue_500 = $rtfeldman$elm_css$Css$batch(
+	_List_fromArray(
+		[
+			A2($rtfeldman$elm_css$Css$property, '--tw-bg-opacity', '1'),
+			A2($rtfeldman$elm_css$Css$property, 'background-color', 'rgba(59, 130, 246, var(--tw-bg-opacity))')
+		]));
+var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$bg_gray_100 = $rtfeldman$elm_css$Css$batch(
+	_List_fromArray(
+		[
+			A2($rtfeldman$elm_css$Css$property, '--tw-bg-opacity', '1'),
+			A2($rtfeldman$elm_css$Css$property, 'background-color', 'rgba(243, 244, 246, var(--tw-bg-opacity))')
+		]));
+var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$bg_gray_900 = $rtfeldman$elm_css$Css$batch(
+	_List_fromArray(
+		[
+			A2($rtfeldman$elm_css$Css$property, '--tw-bg-opacity', '1'),
+			A2($rtfeldman$elm_css$Css$property, 'background-color', 'rgba(17, 24, 39, var(--tw-bg-opacity))')
+		]));
+var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$bg_opacity_80 = A2($rtfeldman$elm_css$Css$property, '--tw-bg-opacity', '0.8');
+var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$border_blue_300 = $rtfeldman$elm_css$Css$batch(
+	_List_fromArray(
+		[
+			A2($rtfeldman$elm_css$Css$property, '--tw-border-opacity', '1'),
+			A2($rtfeldman$elm_css$Css$property, 'border-color', 'rgba(147, 197, 253, var(--tw-border-opacity))')
+		]));
+var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$border_gray_200 = $rtfeldman$elm_css$Css$batch(
+	_List_fromArray(
+		[
+			A2($rtfeldman$elm_css$Css$property, '--tw-border-opacity', '1'),
+			A2($rtfeldman$elm_css$Css$property, 'border-color', 'rgba(229, 231, 235, var(--tw-border-opacity))')
+		]));
+var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$fixed = A2($rtfeldman$elm_css$Css$property, 'position', 'fixed');
+var $rtfeldman$elm_css$Html$Styled$h2 = $rtfeldman$elm_css$Html$Styled$node('h2');
+var $rtfeldman$elm_css$Html$Styled$h3 = $rtfeldman$elm_css$Html$Styled$node('h3');
+var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$h_4 = A2($rtfeldman$elm_css$Css$property, 'height', '1rem');
+var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$h_screen = A2($rtfeldman$elm_css$Css$property, 'height', '100vh');
+var $rtfeldman$elm_css$Css$hover = $rtfeldman$elm_css$Css$pseudoClass('hover');
+var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$justify_between = A2($rtfeldman$elm_css$Css$property, 'justify-content', 'space-between');
+var $rtfeldman$elm_css$Css$marginLeft = $rtfeldman$elm_css$Css$prop1('margin-left');
+var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$p_6 = A2($rtfeldman$elm_css$Css$property, 'padding', '1.5rem');
+var $rtfeldman$elm_css$Css$padding = $rtfeldman$elm_css$Css$prop1('padding');
+var $rtfeldman$elm_css$Css$RemUnits = {$: 'RemUnits'};
+var $rtfeldman$elm_css$Css$rem = A2($rtfeldman$elm_css$Css$Internal$lengthConverter, $rtfeldman$elm_css$Css$RemUnits, 'rem');
+var $matheus23$elm_default_tailwind_modules$Tailwind$Breakpoints$sm = $rtfeldman$elm_css$Css$Media$withMediaQuery(
+	_List_fromArray(
+		['(min-width: 640px)']));
+var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$text_blue_500 = $rtfeldman$elm_css$Css$batch(
+	_List_fromArray(
+		[
+			A2($rtfeldman$elm_css$Css$property, '--tw-text-opacity', '1'),
+			A2($rtfeldman$elm_css$Css$property, 'color', 'rgba(59, 130, 246, var(--tw-text-opacity))')
+		]));
+var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$text_gray_500 = $rtfeldman$elm_css$Css$batch(
+	_List_fromArray(
+		[
+			A2($rtfeldman$elm_css$Css$property, '--tw-text-opacity', '1'),
+			A2($rtfeldman$elm_css$Css$property, 'color', 'rgba(107, 114, 128, var(--tw-text-opacity))')
+		]));
+var $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$w_screen = A2($rtfeldman$elm_css$Css$property, 'width', '100vw');
+var $author$project$Main$viewWalletModal = function (model) {
+	return A2(
+		$rtfeldman$elm_css$Html$Styled$div,
+		_List_Nil,
+		_List_fromArray(
+			[
+				A2(
+				$rtfeldman$elm_css$Html$Styled$div,
+				_List_fromArray(
+					[
+						$rtfeldman$elm_css$Html$Styled$Attributes$css(
+						_List_fromArray(
+							[
+								$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$fixed,
+								$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$w_screen,
+								$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$h_screen,
+								$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$inset_0,
+								$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$bg_gray_900,
+								$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$bg_opacity_80,
+								$rtfeldman$elm_css$Css$zIndex(
+								$rtfeldman$elm_css$Css$int(9997))
+							]))
+					]),
+				_List_Nil),
+				A2(
+				$rtfeldman$elm_css$Html$Styled$div,
+				_List_fromArray(
+					[
+						$rtfeldman$elm_css$Html$Styled$Attributes$css(
+						_List_fromArray(
+							[
+								$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$flex,
+								$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$absolute,
+								$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$inset_0,
+								$rtfeldman$elm_css$Css$zIndex(
+								$rtfeldman$elm_css$Css$int(9998))
+							]))
+					]),
+				_List_fromArray(
+					[
+						A2(
+						$rtfeldman$elm_css$Html$Styled$div,
+						_List_fromArray(
+							[
+								$rtfeldman$elm_css$Html$Styled$Attributes$css(
+								_List_fromArray(
+									[
+										$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$bg_white,
+										$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$p_6,
+										$matheus23$elm_default_tailwind_modules$Tailwind$Breakpoints$sm(
+										_List_fromArray(
+											[
+												$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$m_auto,
+												$rtfeldman$elm_css$Css$minWidth(
+												$rtfeldman$elm_css$Css$px(520)),
+												$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$rounded_lg
+											]))
+									]))
+							]),
+						_List_fromArray(
+							[
+								A2(
+								$rtfeldman$elm_css$Html$Styled$div,
+								_List_fromArray(
+									[
+										$rtfeldman$elm_css$Html$Styled$Attributes$css(
+										_List_fromArray(
+											[
+												$rtfeldman$elm_css$Css$displayFlex,
+												$rtfeldman$elm_css$Css$width(
+												$rtfeldman$elm_css$Css$pct(100)),
+												$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$justify_between,
+												$rtfeldman$elm_css$Css$alignItems($rtfeldman$elm_css$Css$baseline)
+											]))
+									]),
+								_List_fromArray(
+									[
+										A2(
+										$rtfeldman$elm_css$Html$Styled$h2,
+										_List_fromArray(
+											[
+												$rtfeldman$elm_css$Html$Styled$Attributes$css(
+												_List_fromArray(
+													[$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$font_bold]))
+											]),
+										_List_fromArray(
+											[
+												$rtfeldman$elm_css$Html$Styled$text('Account')
+											])),
+										A2(
+										$rtfeldman$elm_css$Html$Styled$img,
+										_List_fromArray(
+											[
+												$rtfeldman$elm_css$Html$Styled$Attributes$css(
+												_List_fromArray(
+													[
+														$rtfeldman$elm_css$Css$height(
+														$rtfeldman$elm_css$Css$px(22)),
+														$rtfeldman$elm_css$Css$width(
+														$rtfeldman$elm_css$Css$px(22)),
+														$rtfeldman$elm_css$Css$margin(
+														$rtfeldman$elm_css$Css$px(8)),
+														$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$cursor_pointer
+													])),
+												$rtfeldman$elm_css$Html$Styled$Events$onClick($author$project$Main$CloseWalletModal),
+												$rtfeldman$elm_css$Html$Styled$Attributes$src('src/assets/images/close.svg')
+											]),
+										_List_Nil)
+									])),
+								A2(
+								$rtfeldman$elm_css$Html$Styled$div,
+								_List_fromArray(
+									[
+										$rtfeldman$elm_css$Html$Styled$Attributes$css(
+										_List_fromArray(
+											[
+												$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$my_6,
+												$rtfeldman$elm_css$Css$marginTop(
+												$rtfeldman$elm_css$Css$px(15)),
+												$rtfeldman$elm_css$Css$height(
+												$rtfeldman$elm_css$Css$px(180)),
+												$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$bg_gray_100,
+												$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$rounded_lg,
+												$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$border,
+												$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$border_solid,
+												$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$border_gray_200,
+												$rtfeldman$elm_css$Css$padding(
+												$rtfeldman$elm_css$Css$px(15))
+											]))
+									]),
+								_List_fromArray(
+									[
+										A2(
+										$rtfeldman$elm_css$Html$Styled$div,
+										_List_fromArray(
+											[
+												$rtfeldman$elm_css$Html$Styled$Attributes$css(
+												_List_fromArray(
+													[$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$grid, $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$gap_6, $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$text_center]))
+											]),
+										_List_fromArray(
+											[
+												A2(
+												$rtfeldman$elm_css$Html$Styled$div,
+												_List_fromArray(
+													[
+														$rtfeldman$elm_css$Html$Styled$Attributes$css(
+														_List_fromArray(
+															[
+																$rtfeldman$elm_css$Css$displayFlex,
+																$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$justify_between,
+																$rtfeldman$elm_css$Css$alignItems($rtfeldman$elm_css$Css$baseline)
+															]))
+													]),
+												_List_fromArray(
+													[
+														A2(
+														$rtfeldman$elm_css$Html$Styled$p,
+														_List_fromArray(
+															[
+																$rtfeldman$elm_css$Html$Styled$Attributes$css(
+																_List_fromArray(
+																	[$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$h_4, $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$text_gray_500]))
+															]),
+														_List_fromArray(
+															[
+																$rtfeldman$elm_css$Html$Styled$text('Connected with Concordium')
+															])),
+														A2(
+														$author$project$Util$btnGray,
+														_List_fromArray(
+															[
+																$rtfeldman$elm_css$Html$Styled$Attributes$css(
+																_List_fromArray(
+																	[
+																		$rtfeldman$elm_css$Css$height(
+																		$rtfeldman$elm_css$Css$px(42)),
+																		$rtfeldman$elm_css$Css$important(
+																		$rtfeldman$elm_css$Css$lineHeight(
+																			$rtfeldman$elm_css$Css$px(0))),
+																		$rtfeldman$elm_css$Css$important(
+																		$rtfeldman$elm_css$Css$width(
+																			$rtfeldman$elm_css$Css$px(120))),
+																		$rtfeldman$elm_css$Css$important($matheus23$elm_default_tailwind_modules$Tailwind$Utilities$text_blue_500),
+																		$rtfeldman$elm_css$Css$important($matheus23$elm_default_tailwind_modules$Tailwind$Utilities$border_blue_300),
+																		$rtfeldman$elm_css$Css$fontSize(
+																		$rtfeldman$elm_css$Css$rem(1)),
+																		$rtfeldman$elm_css$Css$hover(
+																		_List_fromArray(
+																			[
+																				$rtfeldman$elm_css$Css$important($matheus23$elm_default_tailwind_modules$Tailwind$Utilities$text_white),
+																				$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$bg_blue_500
+																			]))
+																	])),
+																$rtfeldman$elm_css$Html$Styled$Events$onClick($author$project$Main$Web3Disconnect)
+															]),
+														_List_fromArray(
+															[
+																$rtfeldman$elm_css$Html$Styled$text('Disconnect')
+															]))
+													])),
+												A2(
+												$rtfeldman$elm_css$Html$Styled$div,
+												_List_fromArray(
+													[
+														$rtfeldman$elm_css$Html$Styled$Attributes$css(
+														_List_fromArray(
+															[
+																$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$mx_auto,
+																$rtfeldman$elm_css$Css$width(
+																$rtfeldman$elm_css$Css$pct(100))
+															]))
+													]),
+												_List_fromArray(
+													[
+														A2(
+														$rtfeldman$elm_css$Html$Styled$h3,
+														_List_Nil,
+														_List_fromArray(
+															[
+																$rtfeldman$elm_css$Html$Styled$text(model.currAddress)
+															]))
+													])),
+												A2(
+												$rtfeldman$elm_css$Html$Styled$div,
+												_List_fromArray(
+													[
+														$rtfeldman$elm_css$Html$Styled$Attributes$css(
+														_List_fromArray(
+															[
+																$rtfeldman$elm_css$Css$displayFlex,
+																$rtfeldman$elm_css$Css$alignItems($rtfeldman$elm_css$Css$baseline)
+															]))
+													]),
+												_List_fromArray(
+													[
+														A2(
+														$rtfeldman$elm_css$Html$Styled$div,
+														_List_fromArray(
+															[
+																$rtfeldman$elm_css$Html$Styled$Attributes$css(
+																_List_fromArray(
+																	[
+																		$rtfeldman$elm_css$Css$displayFlex,
+																		$rtfeldman$elm_css$Css$alignItems($rtfeldman$elm_css$Css$baseline),
+																		$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$cursor_pointer,
+																		$rtfeldman$elm_css$Css$padding(
+																		$rtfeldman$elm_css$Css$px(7)),
+																		$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$rounded_lg,
+																		$rtfeldman$elm_css$Css$hover(
+																		_List_fromArray(
+																			[
+																				$rtfeldman$elm_css$Css$important($matheus23$elm_default_tailwind_modules$Tailwind$Utilities$text_white),
+																				$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$bg_blue_100
+																			]))
+																	]))
+															]),
+														_List_fromArray(
+															[
+																A2(
+																$rtfeldman$elm_css$Html$Styled$img,
+																_List_fromArray(
+																	[
+																		$rtfeldman$elm_css$Html$Styled$Attributes$css(
+																		_List_fromArray(
+																			[
+																				$rtfeldman$elm_css$Css$height(
+																				$rtfeldman$elm_css$Css$px(16)),
+																				$rtfeldman$elm_css$Css$width(
+																				$rtfeldman$elm_css$Css$px(16)),
+																				$rtfeldman$elm_css$Css$margin(
+																				$rtfeldman$elm_css$Css$px(8)),
+																				$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$cursor_pointer
+																			])),
+																		$rtfeldman$elm_css$Html$Styled$Events$onClick($author$project$Main$CloseWalletModal),
+																		$rtfeldman$elm_css$Html$Styled$Attributes$src('src/assets/images/content-copy-blue.svg')
+																	]),
+																_List_Nil),
+																A2(
+																$rtfeldman$elm_css$Html$Styled$p,
+																_List_fromArray(
+																	[
+																		$rtfeldman$elm_css$Html$Styled$Attributes$css(
+																		_List_fromArray(
+																			[$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$h_4, $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$text_blue_500]))
+																	]),
+																_List_fromArray(
+																	[
+																		$rtfeldman$elm_css$Html$Styled$text('Copy address')
+																	]))
+															])),
+														A2(
+														$rtfeldman$elm_css$Html$Styled$div,
+														_List_fromArray(
+															[
+																$rtfeldman$elm_css$Html$Styled$Attributes$css(
+																_List_fromArray(
+																	[
+																		$rtfeldman$elm_css$Css$displayFlex,
+																		$rtfeldman$elm_css$Css$alignItems($rtfeldman$elm_css$Css$baseline),
+																		$rtfeldman$elm_css$Css$marginLeft(
+																		$rtfeldman$elm_css$Css$px(10)),
+																		$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$cursor_pointer,
+																		$rtfeldman$elm_css$Css$padding(
+																		$rtfeldman$elm_css$Css$px(7)),
+																		$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$rounded_lg,
+																		$rtfeldman$elm_css$Css$hover(
+																		_List_fromArray(
+																			[
+																				$rtfeldman$elm_css$Css$important($matheus23$elm_default_tailwind_modules$Tailwind$Utilities$text_white),
+																				$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$bg_blue_100
+																			]))
+																	])),
+																$rtfeldman$elm_css$Html$Styled$Events$onClick(
+																$author$project$Main$RedirectToExplorer('https://testnet.ccdscan.io/accounts?dcount=1&dentity=account&daddress=' + model.currAddress))
+															]),
+														_List_fromArray(
+															[
+																A2(
+																$rtfeldman$elm_css$Html$Styled$img,
+																_List_fromArray(
+																	[
+																		$rtfeldman$elm_css$Html$Styled$Attributes$css(
+																		_List_fromArray(
+																			[
+																				$rtfeldman$elm_css$Css$height(
+																				$rtfeldman$elm_css$Css$px(16)),
+																				$rtfeldman$elm_css$Css$width(
+																				$rtfeldman$elm_css$Css$px(16)),
+																				$rtfeldman$elm_css$Css$margin(
+																				$rtfeldman$elm_css$Css$px(8)),
+																				$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$cursor_pointer
+																			])),
+																		$rtfeldman$elm_css$Html$Styled$Events$onClick($author$project$Main$CloseWalletModal),
+																		$rtfeldman$elm_css$Html$Styled$Attributes$src('src/assets/images/open-in-new-blue.svg')
+																	]),
+																_List_Nil),
+																A2(
+																$rtfeldman$elm_css$Html$Styled$p,
+																_List_fromArray(
+																	[
+																		$rtfeldman$elm_css$Html$Styled$Attributes$css(
+																		_List_fromArray(
+																			[$matheus23$elm_default_tailwind_modules$Tailwind$Utilities$h_4, $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$text_blue_500]))
+																	]),
+																_List_fromArray(
+																	[
+																		$rtfeldman$elm_css$Html$Styled$text('View on CCDScan')
+																	]))
+															]))
+													]))
+											]))
+									]))
+							]))
+					]))
+			]));
+};
 var $author$project$Main$view = function (model) {
 	return A2(
 		$rtfeldman$elm_css$Html$Styled$div,
@@ -14347,6 +31733,7 @@ var $author$project$Main$view = function (model) {
 						$rtfeldman$elm_css$Html$Styled$Attributes$rel('stylesheet')
 					]),
 				_List_Nil),
+				$author$project$Main$viewConnectPanel(model),
 				A2(
 				$rtfeldman$elm_css$Html$Styled$div,
 				_List_fromArray(
@@ -14371,8 +31758,24 @@ var $author$project$Main$view = function (model) {
 									[$author$project$Util$localStyle, $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$bg_white, $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$rounded_lg, $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$border, $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$border_solid, $matheus23$elm_default_tailwind_modules$Tailwind$Utilities$border_gray_300]))
 							]),
 						_List_fromArray(
-							[$author$project$Main$viewStartContent]))
-					]))
+							[
+								function () {
+								var _v0 = model.currContentView;
+								switch (_v0.$) {
+									case 'MainView':
+										return $author$project$Main$viewStartContent;
+									case 'ExploreView':
+										return $rtfeldman$elm_css$Html$Styled$fromUnstyled(
+											$author$project$Main$viewExploreContent(model));
+									default:
+										return $author$project$Main$viewAddContent;
+								}
+							}()
+							]))
+					])),
+				model.isModalVisible ? $author$project$Main$viewWalletModal(model) : $rtfeldman$elm_css$Html$Styled$text(''),
+				$rtfeldman$elm_css$Html$Styled$fromUnstyled(
+				A4($pablen$toasty$Toasty$view, $author$project$Main$myConfig, $pablen$toasty$Toasty$Defaults$view, $author$project$Main$ToastyMsg, model.toasties))
 			]));
 };
 var $author$project$Main$main = $elm$browser$Browser$element(
@@ -14383,4 +31786,4 @@ var $author$project$Main$main = $elm$browser$Browser$element(
 		view: A2($elm$core$Basics$composeR, $author$project$Main$view, $rtfeldman$elm_css$Html$Styled$toUnstyled)
 	});
 _Platform_export({'Main':{'init':$author$project$Main$main(
-	$elm$json$Json$Decode$succeed(_Utils_Tuple0))({"versions":{"elm":"0.19.1"},"types":{"message":"Main.Msg","aliases":{"Main.Coordinate":{"args":[],"type":"{ lat : Basics.Float, lon : Basics.Float }"}},"unions":{"Main.Msg":{"args":[],"tags":{"NoOp":[],"Web3Connect":[],"Web3Disconnect":[],"SubmitCoordinate":["Main.Coordinate"],"WriteCoordinate":["Main.Coordinate"],"ReceiveCoordinate":[]}},"Basics.Float":{"args":[],"tags":{"Float":[]}}}}})}});}(this));
+	$elm$json$Json$Decode$succeed(_Utils_Tuple0))({"versions":{"elm":"0.19.1"},"types":{"message":"Main.Msg","aliases":{"Main.Coordinate":{"args":[],"type":"{ lat : Basics.Float, lon : Basics.Float }"},"Mapbox.Element.EventData":{"args":[],"type":"{ point : ( Basics.Int, Basics.Int ), lngLat : LngLat.LngLat, renderedFeatures : List.List Json.Decode.Value }"},"LngLat.LngLat":{"args":[],"type":"{ lng : Basics.Float, lat : Basics.Float }"},"Json.Decode.Value":{"args":[],"type":"Json.Encode.Value"},"Toasty.Id":{"args":[],"type":"Basics.Int"}},"unions":{"Main.Msg":{"args":[],"tags":{"NoOp":[],"ToastyMsg":["Toasty.Msg Toasty.Defaults.Toast"],"Web3Connect":[],"Web3Disconnect":[],"ReceivedConnectFromJS":["String.String"],"SendInitTransaction":[],"SendUpdateTransaction":[],"OpenView":["Main.ContentView"],"ShowWalletModal":[],"CloseWalletModal":[],"SubmitCoordinate":[],"WriteCoordinate":["Main.Coordinate"],"ReceiveCoordinate":[],"Hover":["Mapbox.Element.EventData"],"MapClick":["Mapbox.Element.EventData"],"RedirectToExplorer":["String.String"],"SetLatitude":["String.String"],"SetLongitude":["String.String"],"SetLabel":["String.String"]}},"Main.ContentView":{"args":[],"tags":{"MainView":[],"ExploreView":[],"AddView":[]}},"Basics.Float":{"args":[],"tags":{"Float":[]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"List.List":{"args":["a"],"tags":{}},"Toasty.Msg":{"args":["a"],"tags":{"Add":["a"],"Remove":["Toasty.Id"],"TransitionOut":["Toasty.Id"]}},"String.String":{"args":[],"tags":{"String":[]}},"Toasty.Defaults.Toast":{"args":[],"tags":{"Success":["String.String","String.String"],"Warning":["String.String","String.String"],"Error":["String.String","String.String"]}},"Json.Encode.Value":{"args":[],"tags":{"Value":[]}}}}})}});}(this));

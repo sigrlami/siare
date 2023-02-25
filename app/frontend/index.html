@@ -1,38 +1,176 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Concordium | Trails</title>
     <script type="text/javascript" src="index.js"></script>
-    <link rel="icon" href="https://concordium.com/wp-content/uploads/2022/06/cropped-favicon-32x32.png" sizes="32x32">
-    <link rel="stylesheet" href="src/assets/css/styles.css" >
+    <link rel="icon" href="src/assets/images/cropped-favicon-32x32.webp" sizes="32x32">
+    <link rel="stylesheet" href="src/assets/css/styles.css">
+    <link rel="stylesheet" href="src/assets/css/toasty/defaults.css">
+    <script src="node_modules/elm-mapbox/dist/elm-mapbox.umd.js"></script>
+    <!-- Add concordium web sdk related scripts-->
+    <script src="node_modules/@concordium/web-sdk/lib/concordium.min.js"></script>
+    <script src="node_modules/@concordium/browser-wallet-api-helpers/lib/concordiumHelpers.min.js"></script>
+
+
 </head>
+
 <body>
-<div id="myapp"></div>
+    <div id="ccdh-app"></div>
 </body>
+
 <script type="text/javascript">
+
+    let client = null;
+    let contractIndex = 0; // we use it for uninitialized
+
+    // Get the schema in base64 format with the following command:
+    // cargo concordium build --schema-base64-out -
+    let rawModuleSchema = '//8DAQAAAAoAAABjY2RoX3Rza18zAAQAAAAHAAAAcmVjZWl2ZQQBFQUAAAAQAAAAUGFyc2VQYXJhbXNFcnJvcgIKAAAAT3duZXJFcnJvcgINAAAATGF0aXR1ZGVFcnJvcgIOAAAATG9uZ2l0dWRlRXJyb3ICCgAAAExhYmVsRXJyb3ICCgAAAHVwZGF0ZV9sYXQECBUFAAAAEAAAAFBhcnNlUGFyYW1zRXJyb3ICCgAAAE93bmVyRXJyb3ICDQAAAExhdGl0dWRlRXJyb3ICDgAAAExvbmdpdHVkZUVycm9yAgoAAABMYWJlbEVycm9yAgoAAAB1cGRhdGVfbG9uBAgVBQAAABAAAABQYXJzZVBhcmFtc0Vycm9yAgoAAABPd25lckVycm9yAg0AAABMYXRpdHVkZUVycm9yAg4AAABMb25naXR1ZGVFcnJvcgIKAAAATGFiZWxFcnJvcgIEAAAAdmlldwEUAAMAAAAFAAAAbGFiZWwWAgMAAABsYXQIAwAAAGxvbggA';
+
+    // Get the module reference with the following command:
+    // concordium-client module deploy ./voting_contract.wasm.v1 --sender <AccountAddress> --grpc-port 10000 --grpc-ip node.testnet.concordium.com
+    const moduleReference = new concordiumSDK.ModuleReference('e13fb5b0f8525947a5a7dbf07cd131ea6b548321f18b3b930c5d130617aab45b');
+
+    elmMapbox.registerCustomElement({ token: 'pk.eyJ1Ijoic2lncmxhbWkiLCJhIjoiY2xkejI5bTN2MHhlbTNxcHI3cWQ5ejdjZiJ9.s29gEWEEYnLOovhafExLVQ' });
+
     // Start the Elm application.
     var app = Elm.Main.init({
-        node: document.getElementById('myapp')
+        node: document.getElementById('ccdh-app')
     });
 
-    //document.getElementById("audio-player").volume = 1;
+    elmMapbox.registerPorts(app);
 
-    app.ports.playMusic.subscribe(function() {
-        document.getElementById("audio-player").play();
-        const durationAudio = document.getElementById("audio-player").duration
-        app.ports.receiveDuration.send(durationAudio);
+    function setupWeb3() {
+        // Get the client.
+        concordiumHelpers.detectConcordiumProvider()
+            .then((c) => client = c)
+            .catch(alert);
+    }
 
+    // Set up the page when the DOM is loaded.
+    addEventListener("DOMContentLoaded", (_) => setupWeb3());
+
+    ///////////////////////////////////////////////////////////////
+    /// Concordium related ports
+
+    // connect web wallet
+    app.ports.walletConnect.subscribe(function (data) {
+        // Request connection    
+        if (client != undefined) {
+            client.connect().then((accountAddress) => {
+                currentAccountAddress = accountAddress;
+                app.ports.receiveConnect.send(currentAccountAddress);
+            });
+        }
     });
 
-    app.ports.stopMusic.subscribe(function() {
-        document.getElementById("audio-player").pause();
+    /// Concordium related ports
+    app.ports.sendInitTransaction.subscribe(function (data) {
+        // Request connection    
+        if (client != undefined) {
+            console.log(data);
+
+            txInitiatorAddress = data['address'];
+            txType = concordiumSDK.AccountTransactionType.InitContract;
+
+            // Send transaction to the network
+            client.sendTransaction(
+                txInitiatorAddress,
+                txType,
+                {
+                    amount: new concordiumSDK.CcdAmount(0n),
+                    moduleRef: moduleReference,
+                    initName: "ccdh_tsk_3",
+                    maxContractExecutionEnergy: 3000n,
+                },
+                // options for a contract
+                {
+                    label: data['label'],
+                    lat: data['lat'],
+                    lon: data['lon']
+                },
+                rawModuleSchema,
+            )
+                .then((msg) => alert(`Successfully set up new contest with transaction hash: "${msg}"`))
+                .catch(alert);
+        }
     });
 
-    app.ports.setCurrentTime.subscribe(function(time) {
-        var audio = document.getElementById('audio-player');
-        audio.currentTime = time;
+    app.ports.sendUpdateTransaction.subscribe(function (data) {
+        // Request connection    
+        if (client != undefined) {
+            console.log(data);
+
+            txInitiatorAddress = data['address'];
+            txType = concordiumSDK.AccountTransactionType.Update;
+
+            client
+                .sendTransaction(
+                    currentAccountAddress,
+                    concordiumSDK.AccountTransactionType.Update,
+                    {
+                        amount: new concordiumSDK.CcdAmount(0n),
+                        contractAddress: {
+                            index: contractIndex,
+                            subindex: 0n,
+                        },
+                        receiveName: 'ccdh_geo_con.add_coord',
+                        maxContractExecutionEnergy: 3000n,
+                    },
+                    {
+                        label: data['label'],
+                        lat: data['lat'],
+                        lon: data['lon']
+                    },
+                    rawModuleSchema,
+                )
+                .then((msg) => alert(`Successfully sent vote with transaction hash: "${msg}"`))
+                .catch(alert);
+        }
+    }
+
+    );
+
+    app.ports.viewRoutes.subscribe(function (data) {
+        // Request connection    
+        if (client != undefined) {
+            console.log(data);
+
+            client.getJsonRpcClient().invokeContract({
+                contract: { index: BigInt(contractIndex), subindex: BigInt(0) },
+                method: 'voting.view',
+            })
+                .then((viewResult) => {
+                    let returnValue = concordiumSDK.deserializeReceiveReturnValue(
+                        concordiumSDK.toBuffer(viewResult.returnValue, 'hex'),
+                        concordiumSDK.toBuffer(rawModuleSchema, 'base64'),
+                        "voting",
+                        "view", // NOTE: Here it is just the entrypoint name, i.e. the contract name is not prepended.
+                        concordiumSDK.SchemaVersion.V2
+                    );
+                    document.getElementById('resultDescription').value = returnValue.description;
+                    document.getElementById('resultEndtime').value = returnValue.end_time;
+                    // Making the tally slightly prettier.
+                    const tally = returnValue.tally.map((r) => r[0] + ": " + r[1]);
+                    document.getElementById('resultTally').innerHTML = tally;
+                })
+                .catch(alert);
+        }
+    }
+    );
+
+    ////////////////////////////////////////////////////////////
+    // Aditional ports for misc functionality
+
+    app.ports.sendData.subscribe(function (data) {
+        console.log("Data from Elm: ", data);
     });
+
+    app.ports.newTab.subscribe(url => window.open(url, '_blank'));
+
 
 </script>
+
 </html>

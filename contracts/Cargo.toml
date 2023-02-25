@@ -1,12 +1,12 @@
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [package]
-name = "ccdh_tsk_2"
+name = "ccdh_tsk_3"
 version = "0.1.0"
 edition = "2018"
 license = "MPL-2.0"
 authors = [ "Sergey Bushnyak <sergey.bushnyak@sigrlami.eu>" ]
-description = "Concordium Hackathon Task 2"
+description = "Concordium Hackathon Task 3"
 
 [features]
 default = ["std"]

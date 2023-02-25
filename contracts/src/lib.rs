@@ -25,7 +25,7 @@ enum Error {
 }
 
 /// Init function that creates a new smart contract.
-#[init(contract = "ccdh_tsk_2")]
+#[init(contract = "ccdh_tsk_3")]
 fn init<S: HasStateApi>(
     _ctx: &impl HasInitContext,
     _state_builder: &mut StateBuilder<S>,
@@ -39,7 +39,7 @@ fn init<S: HasStateApi>(
 ///  If `throw_error == true`, the receive function will throw a custom error.
 ///  If `throw_error == false`, the receive function executes successfully.
 #[receive(
-    contract = "ccdh_tsk_2",
+    contract = "ccdh_tsk_3",
     name = "receive",
     parameter = "bool",
     error = "Error",
@@ -61,7 +61,7 @@ fn receive<S: HasStateApi>(
 
 // Update longitude
 #[receive(
-    contract = "ccdh_tsk_2",
+    contract = "ccdh_tsk_3",
     name = "update_lon",
     parameter = "i32",
     error = "Error",
@@ -85,7 +85,7 @@ fn update_lon<S: HasStateApi>(
 
 // Update latitude
 #[receive(
-    contract = "ccdh_tsk_2",
+    contract = "ccdh_tsk_3",
     name = "update_lat",
     parameter = "i32",
     error = "Error",
@@ -112,7 +112,7 @@ fn update_lat<S: HasStateApi>(
 
 /// View function that returns the content of the state.
 #[receive(
-    contract = "ccdh_tsk_2",
+    contract = "ccdh_tsk_3",
     name = "view",
     return_value = "State"
 )]

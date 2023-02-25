@@ -25,6 +25,7 @@ module Util exposing
     , viewInfoError
     , viewInfoSuccess
     , viewInfoWarning
+    , viewTitle
     , wrapInput
     , wrapSelect
     )
@@ -268,6 +269,15 @@ viewInfo =
         ]
 
 
+viewTitle : String -> Html msg
+viewTitle msg =
+    viewInfo [ css [ fontSize (px 16) ] ]
+        [ div []
+            [ div [] [ strong [] [ text msg ] ]
+            ]
+        ]
+
+
 viewInfoWarning : String -> Html msg
 viewInfoWarning h =
     viewInfo [ css [ backgroundColor <| rgba 255 243 205 1, color <| hex "#856404", after [ backgroundColor <| hex "#f4c32b" ] ] ] [ viewWarning h ]
@@ -300,14 +310,14 @@ viewError mess =
 
 
 viewWarning : String -> Html msg
-viewWarning mess =
+viewWarning msg =
     let
         head =
             "Warning!"
     in
     div []
         [ div [] [ strong [] [ text head ] ]
-        , text ("Warning: " ++ mess)
+        , text ("Warning: " ++ msg)
         ]
 
 

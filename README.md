@@ -1,88 +1,68 @@
-# CONCORDIUM HACKATON - TASK 2 - SUBMISSION
+# CONCORDIUM HACKATON - TASK 3 - SUBMISSION
 
 Mainnet address: 4csBZDoBmhtMmsq4dWTGdWowT7RMZtJJrEQGF5XHUKbuG4vAdZ
 
-Task1: https://github.com/sigrlami/ccdh/blob/sb/ccdh-task-1-submission/README.md
+- Task1: https://github.com/sigrlami/ccdh/blob/sb/ccdh-task-1-submission/README.md
+- Task2: https://github.com/sigrlami/ccdh/tree/sb/ccdh-task-2-submission
 
-This is simple [smart-contract](https://testnet.ccdscan.io/?dcount=2&dentity=account&daddress=3xyG4riNviVCGCsan9JWY5qsSbjju4nAgLKACcWYu9bovnL1Ak) that holds lat/lon structure for some location in the world. When deployed allows to update latitude, longitude, or label for provided numerical values.
-
-- `deploy`: [13d20b1ad6a3f841d9c96dff829a55f526860547418063b9ebe2270c526c81d7](https://testnet.ccdscan.io/?dcount=3&dentity=transaction&dhash=13d20b1ad6a3f841d9c96dff829a55f526860547418063b9ebe2270c526c81d7)
-- `init`:  [76823e9071782c9b16a70a22390fce180d250f24b2c3cbbdb2dd572bdff77e2b](https://testnet.ccdscan.io/?dcount=3&dentity=transaction&dhash=76823e9071782c9b16a70a22390fce180d250f24b2c3cbbdb2dd572bdff77e2b)
-- `update`: [3a5989fa84e6f5e23e2e88c0caf290d074016cddaa23bc2fd2d4bc941de20939](https://testnet.ccdscan.io/?dcount=1&dentity=transaction&dhash=3a5989fa84e6f5e23e2e88c0caf290d074016cddaa23bc2fd2d4bc941de20939)
-- `invoke`: `n/a` (see screen in the end)
-
-## Generating New Project & Setup
-
-Install missing library
-```
-cargo install --locked cargo-generate
-```
-```
-cargo concordium init
-```
-
-update config for the task
-
-## Deployment
-
-After we ensured functionality, user client for deployment.
+This is simple dAPP implemented in Elm which allows to create tourist routes that are stored on-chain. Available here [trails.ccd.sigrlami.eu](https://trails.ccd.sigrlami.eu)
 
 
-### Deploy Smart Contract
+![demo](media/video-1.gif)
 
-```
-$ concordium-client --grpc-ip node.testnet.concordium.com --grpc-port 10000 module deploy ccdh-geo.wasm.v1 --sender 3xyG4riNviVCGCsan9JWY5qsSbjju4nAgLKACcWYu9bovnL1Ak --name ccdh-geo
-```
+![demo](media/screen-2.png)
 
-![1](https://drive.google.com/uc?export=view&id=1aHSzEX9Y9SgidUP5uTkIbW8mIC5OsLfD)
 
-Result
-```
-13d20b1ad6a3f841d9c96dff829a55f526860547418063b9ebe2270c526c81d7
-```
+## Structure
 
-### Initialize Deployed Contract
+- `app/frontend` - source code for Elm frontend that uses Javascript SDK for Concordium
+- `contracts` - source code for Concordium smart-contracts that store data on-chain
+- `media` - additional media files for better presentation
+
+## Details
+
+App can be viewable in 2 ways:
+
+- `simple`   - (as shown in demo), allows to add and change data
+- `extended` - visualize on-chain data
+
+## Building
+
+1. Prepare deployment package
 
 ```
-$ concordium-client --grpc-ip node.testnet.concordium.com --grpc-port 10000 contract init 6f30e4f39f298c702893312e35b79a7decd665d9f040e21c1107360b34dd77f6 --sender 3xyG4riNviVCGCsan9JWY5qsSbjju4nAgLKACcWYu9bovnL1Ak --contract ccdh_tsk_2 --energy 10000
+$ cargo concordium build --schema-embed --schema-out schema.bin --out ccdh-geo.wasm.v1
 ```
 
-![2](https://drive.google.com/uc?export=view&id=1GB_ZzekB1wEjsigZ_UM11038IDjA5J2B)
-
-Result
-```
-76823e9071782c9b16a70a22390fce180d250f24b2c3cbbdb2dd572bdff77e2b
-```
-
-### Update Deployed Contract
-
+2. Deploy package
 
 ```
-$ concordium-client --grpc-ip node.testnet.concordium.com --grpc-port 10000 contract update 2835 --entrypoint update_lon --parameter-json param.json --sender 3xyG4riNviVCGCsan9JWY5qsSbjju4nAgLKACcWYu9bovnL1Ak --energy 10000
-```
-where `2835` index of a contract, and `param.json` contains value `30712481`.
-
-![3](https://drive.google.com/uc?export=view&id=1jaBNZtRa4Zk-MdrH_93anwgqVT8T6-Lp)
-
-NB: when using `{"lon": 30712481}` leads to an eror like
-
-```
-Error: Could not decode parameters from file 'param.json' as JSON:
-       Expected value of type "<Int32>", but got: {"lon":30712481}.
+$ concordium-client --grpc-ip node.testnet.concordium.com module deploy ccdh-geo.wasm.v1 --sender 3xyG4riNviVCGCsan9JWY5qsSbjju4nAgLKACcWYu9bovnL1Ak --name ccdh-geo-module
 ```
 
-which is not clear on how to enumerate params.
+ref e13fb5b0f8525947a5a7dbf07cd131ea6b548321f18b3b930c5d130617aab45b
 
-
-Result
-```
-3a5989fa84e6f5e23e2e88c0caf290d074016cddaa23bc2fd2d4bc941de20939
-```
-
-### Invoke Contract
+3. Generate base64 schema
 
 ```
-$ concordium-client --grpc-ip node.testnet.concordium.com --grpc-port 10000 contract update 2835 --entrypoint view --sender 3xyG4riNviVCGCsan9JWY5qsSbjju4nAgLKACcWYu9bovnL1Ak --energy 10000
+$
 ```
 
-![4](https://drive.google.com/uc?export=view&id=1vqXZ8EugHZ4dZJ5cPoYBkQSRq1NOPhJe)
+4. Init
+
+concordium-client --grpc-ip node.testnet.concordium.com contract init voting-contract-module --contract voting --parameter-json init-parameter.json --sender ACCOUNT_ADDRESS --energy 10000 --name voting-contract
+
+
+
+````````
+concordium-client --grpc-ip node.testnet.concordium.com contract init ccdh-geo-module --contract ccdh_tsk_3 --sender 3xyG4riNviVCGCsan9JWY5qsSbjju4nAgLKACcWYu9bovnL1Ak --energy 10000 --name ccdh-geo-contract
+
+
+
+Transaction is finalized into block a8a4cd72200a96acf8ba5e5587cd7431d1c0ddf83d20d06a34d370d3286258c1 with status "success" and cost 2.467414 CCD (1371 NRG).
+[17:00:28] Transaction finalized.
+Contract successfully initialized with address: {"index":3437,"subindex":0}
+Contract address {"index":3437,"subindex":0} was successfully named 'ccdh-geo-contract'.
+
+
+``````````

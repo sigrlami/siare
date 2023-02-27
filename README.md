@@ -1,68 +1,23 @@
-# CONCORDIUM HACKATON - TASK 3 - SUBMISSION
+# Siare - Verified Randomness On-Chain
 
-Mainnet address: 4csBZDoBmhtMmsq4dWTGdWowT7RMZtJJrEQGF5XHUKbuG4vAdZ
+DApp to showcase VRF (Verfified Randomness Function) for smart-contracts.
 
-- Task1: https://github.com/sigrlami/ccdh/blob/sb/ccdh-task-1-submission/README.md
-- Task2: https://github.com/sigrlami/ccdh/tree/sb/ccdh-task-2-submission
+- allows to setup verified feed of random numbers
+- allows to setup data feed from Web2 services and place in on-chain with additional verification
 
-This is simple dAPP implemented in Elm which allows to create tourist routes that are stored on-chain. Available here [trails.ccd.sigrlami.eu](https://trails.ccd.sigrlami.eu)
+## Rationale
 
+Whilst it is true that computers can generate random numbers upon user request, in actuality, these numbers are not truly random. This is because the algorithm used to generate them is created from an initial value, and given enough computational power, anyone can break down the sequence of random numbers by knowing the algorithm and initial value. This effectively renders the generation of such numbers unreliable, hence why these generators are referred to as pseudorandom. There are potential ways to generate truly random numbers by using physical events that occur in a genuinely random way, such as nuclear oscillation noise or weather data.
 
-![demo](media/video-1.gif)
+Blockchains, however, are even more limited in their ability to generate random numbers due to being locked within a virtual machine (VM) execution environment. Knowing the internal workings of the VM can provide a means to break down the number generation process in the same way.
 
-![demo](media/screen-2.png)
+Random numbers play a vital role in various DeFi applications, including fair NFT launches, gambling, gaming, and assigning user roles in a DAO. Without an element of randomness, these applications can be easily exploited, and the outcome can be predicted.
 
+Verifiable Random Function [VRFs](https://medium.com/algorand/algorand-releases-first-open-source-code-of-verifiable-random-function-93c2960abd61) help to solve randomness issue via cryptographics algorithm and rely on power of distribution. Most blockchain have both: cryptographic capabilities and set of parties that are distributed spatialy and provide individual computation.
 
 ## Structure
 
-- `app/frontend` - source code for Elm frontend that uses Javascript SDK for Concordium
-- `contracts` - source code for Concordium smart-contracts that store data on-chain
-- `media` - additional media files for better presentation
-
-## Details
-
-App can be viewable in 2 ways:
-
-- `simple`   - (as shown in demo), allows to add and change data
-- `extended` - visualize on-chain data
-
-## Building
-
-1. Prepare deployment package
-
-```
-$ cargo concordium build --schema-embed --schema-out schema.bin --out ccdh-geo.wasm.v1
-```
-
-2. Deploy package
-
-```
-$ concordium-client --grpc-ip node.testnet.concordium.com module deploy ccdh-geo.wasm.v1 --sender 3xyG4riNviVCGCsan9JWY5qsSbjju4nAgLKACcWYu9bovnL1Ak --name ccdh-geo-module
-```
-
-ref e13fb5b0f8525947a5a7dbf07cd131ea6b548321f18b3b930c5d130617aab45b
-
-3. Generate base64 schema
-
-```
-$
-```
-
-4. Init
-
-concordium-client --grpc-ip node.testnet.concordium.com contract init voting-contract-module --contract voting --parameter-json init-parameter.json --sender ACCOUNT_ADDRESS --energy 10000 --name voting-contract
-
-
-
-````````
-concordium-client --grpc-ip node.testnet.concordium.com contract init ccdh-geo-module --contract ccdh_tsk_3 --sender 3xyG4riNviVCGCsan9JWY5qsSbjju4nAgLKACcWYu9bovnL1Ak --energy 10000 --name ccdh-geo-contract
-
-
-
-Transaction is finalized into block a8a4cd72200a96acf8ba5e5587cd7431d1c0ddf83d20d06a34d370d3286258c1 with status "success" and cost 2.467414 CCD (1371 NRG).
-[17:00:28] Transaction finalized.
-Contract successfully initialized with address: {"index":3437,"subindex":0}
-Contract address {"index":3437,"subindex":0} was successfully named 'ccdh-geo-contract'.
-
-
-``````````
+- `siare-core` - base data types and logic that can be used regardless of VM type
+- `siare-accumulate` - additional data types and functions to work on Accumulate
+- `siare-concordium` - additional data types and functions to work on Concordium
+- `siare-app` - minimalistic frontend

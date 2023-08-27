@@ -20,4 +20,11 @@ Verifiable Random Function [VRFs](https://medium.com/algorand/algorand-releases-
 - `siare-core` - base data types and logic that can be used regardless of VM type
 - `siare-accumulate` - additional data types and functions to work on Accumulate
 - `siare-concordium` - additional data types and functions to work on Concordium
+- `siare-near` - additional data types and functions to work on Near
 - `siare-app` - minimalistic frontend
+
+modules for other blockchains will be added in future.
+
+## Tokenomics
+
+<to be defined>
